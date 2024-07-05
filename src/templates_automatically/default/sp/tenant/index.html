@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<meta name = "viewport" content = "width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+<!--
+<meta name = "viewport" content = "width = 320">
+-->
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta http-equiv="Expires" content="Thu, 01 Dec 1994 16:00:00 GMT">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta name="copyright" content="Copyright (c) All rights reserved by Sateraito Office, Inc." />
+<LINK href="/images/oem/{{oem_company_code}}/favicon.ico" rel="SHORTCUT ICON" />
+<LINK href="/images/oem/{{oem_company_code}}/apple-touch-icon.png" rel="apple-touch-icon" />
+
+
+<STYLE type="text/css">
+<!--
+body{
+		color:{% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+		background-color:#ffffff;
+		margin-left:0px;
+		margin-top:0px;
+		margin-right:0px;
+		margin-bottom:0px;
+		font-family: Meiryo, メイリオ, 'MS UI Gothic', 'MS PGothic', Osaka, Arial, sans-serif;
+{% if not BgIsExistCustom:%}
+		background:url(/images/sp/01.jpg) no-repeat top left;
+{% else: %}
+		background:url({{vurl}}picture/mainbg01) no-repeat top left;
+{% endif %}
+}
+
+.style1 {
+	color: {% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+	font-size: 10px;
+	text-align:left;}
+
+.style2 {
+	color: {% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+	font-size: 12px;
+	font-weight: bold;
+	text-align:center;}
+
+.style3 {
+	color: {% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+	font-size: 12px;
+	text-align:right;}
+
+.style4 {
+	color: {% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+	font-size: 12px;
+	font-weight: bold;
+	text-align:left;}
+
+.style5 {
+	color: {% if dept.login_fontcolor_sp and dept.login_fontcolor_sp != '': %}#{{dept.login_fontcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+	font-size: 12px;
+	text-align:left;}
+
+.text_validate {
+	color: {% if dept.login_vccolor_sp and dept.login_vccolor_sp != '': %}#{{dept.login_vccolor_sp}};{%else:%}#FF0000;{%endif%}
+	font-size: 10px;
+	font-weight: bold;
+	text-align:center;}
+
+.Logo{
+/*	position:absolute;
+	top:0px;
+	left:0px;
+*/
+	padding:10px;
+	margin:0 auto;
+	min-height:44px;
+}
+
+.MainBox{
+	min-height:356px;
+	position:relative;
+	clear:both;
+}
+
+.area01{
+	color: #FFFFFF;
+	font-size: 10px;
+/*
+	position:absolute;
+	top:65px;
+	left:10px;
+*/
+	min-height:356px;
+	max-height:480px;
+	padding:10px;
+}
+	
+.LoginBox{
+	min-height:356px;
+	max-height:480px;
+	position:relative;
+	clear:both;
+}
+
+.LoginBoxTable{
+	margin:0 auto;
+	width:320px;
+	height:356px;
+}
+
+.mini_pr{
+	text-align:center;
+}
+	
+
+.paging_area {
+	text-align:right;
+	font-size:11px;
+	font-family: 'メイリオ',Meiryo,tahoma, arial, verdana, sans-serif;
+ }
+
+a {
+	color:{% if dept.login_linkcolor_sp and dept.login_linkcolor_sp != '': %}#{{dept.login_linkcolor_sp}};{%else:%}#FFFFFF;{%endif%}
+}
+-->
+</style>
+
+<title>{{lang.VMSG_SITE_TITLE_DASHBOARD}} - {{lang.HTML_TITLE}}</title>
+</head>
+<body>
+<div class="Logo">
+{% if not BgIsExistCustom and (not BgIsExistCustomLogo or not BgIsDispCustomLogo): %}
+<img src="/images/oem/{{oem_company_code}}/login_logo.png?{{version}}" height="44px" border="0" />
+{% elif BgIsExistCustomLogo and BgIsDispCustomLogo: %}
+<img src="{{vurl}}picture/logo" height="44px" border="0" />
+{% else: %}
+{% endif %}
+</div>
+<!-- MainBox//start -->
+<div class="MainBox">
+<div class="area01">
+<table>
+<tr>
+  <td class="style3">{{lang.VMSG_TENANTO_NAME}}&nbsp;:</td>
+  <td class="style5"><p>{{tenant}}</p></td>
+</tr>
+<tr>
+  <td class="style3">{{lang.VMSG_LANGUAGE}}&nbsp;:</td>
+  <td class="style5"><p>{{language_disp}}</p></td>
+</tr>
+<tr>
+  <td class="style3">{{lang.VMSG_LOGIN_USERID}}&nbsp;:</td>
+  <td class="style5"><p>{{login.id}}{% if login.name and login.name != '' %}({{login.name}}){%endif%}</p></td>
+</tr>
+</table>
+<p><a href="{{vurl}}personal/" >{{lang.VMSG_TO_PERSONAL}}</a></p>
+<p><a href="{{vurl}}logout">{{lang.VMSG_LOGOUT}}</a></p>
+<br/>
+</div>
+</div>
+<!-- MainBox//end -->
+
+</body>
+</html>

@@ -1,0 +1,46 @@
+runtime: python311
+instance_class: F1
+automatic_scaling:
+  # min_idle_instances: 1
+  max_idle_instances: 10
+  #min_pending_latency: 200ms  # シングルプロセスシングルスレッドの場合min_pending_latencyは若干長めに取ってもOK
+  min_pending_latency: 300ms
+  max_concurrent_requests: 4  # 1ワーカープロセスでの動作設定（1プロセス4スレッド）
+  #max_concurrent_requests: 1  # 1ワーカープロセスでの動作設定（app.yamlは1プロセス1スレッドに変更 2023-08-29）
+
+#automatic_scaling:  # for production
+#  min_idle_instances: 1
+#  max_idle_instances: 3
+##  min_pending_latency: 250ms
+#  min_pending_latency: 100ms  # from 2020-01-29
+
+app_engine_apis: true
+#default_expiration: "4d 5h"
+
+env_variables:
+  MEMCACHE_USE_CROSS_COMPATIBLE_PROTOCOL: 'True'
+  NDB_USE_CROSS_COMPATIBLE_PICKLE_PROTOCOL: 'True'
+  GAE_USE_SOCKETS_HTTPLIB: 'true'
+  SATERAITO_SET_SINGLETHREAD_MODE: 'True'  # defaultサービスをF1かつシングルスレッドで動作させる 2023-08-29
+
+# 1ワーカープロセスでの動作設定（1プロセス4スレッド） --> app.yamlは1プロセス1スレッドに変更 2023-08-29
+#entrypoint: gunicorn --timeout 0 -b :$PORT --workers 1 --threads 4 main:app
+entrypoint: gunicorn --timeout 0 -b :$PORT --workers 1 --threads 4 main:app
+
+inbound_services:
+- warmup
+
+#automatic_scaling:
+#  max_idle_instances: 4
+#  min_pending_latency: 250ms
+
+handlers:
+
+- url: /favicon.ico
+  static_files: images/favicon.ico
+  upload: images/favicon.ico
+
+- url: /(.*)
+  script: auto
+  secure: always
+

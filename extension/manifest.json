@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extension_name__",
+  "description": "__MSG_extension_description__",
+  "version": "1.0.0",
+  "minimum_chrome_version": "116",
+  "default_locale": "ja",
+  "permissions": [
+    "sidePanel",
+    "nativeMessaging"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*"
+      ],
+      "css": [
+        "styles/style.css"
+      ],
+      "js": [
+        "third-party/crypto/core.min.js",
+        "third-party/crypto/crypto-js.min.js",
+        "third-party/crypto/md5.js",
+        "third-party/jquery-1.10.2.min.js",
+        "scripts/sateraito_lang.js",
+        "scripts/content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "icons": {
+    "32": "images/32.png",
+    "48": "images/48.png",
+    "96": "images/96.png",
+    "128": "images/128.png"
+  },
+  "action": {
+    "default_title": "__MSG_extension_action_default_title__"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
+}

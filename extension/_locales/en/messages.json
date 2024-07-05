@@ -1,0 +1,11 @@
+{
+  "extension_name": {
+    "message": "Sateraito Procedure/Side Panel"
+  },
+  "extension_description": {
+    "message": "Sateraito Office Side Panel"
+  },
+  "extension_action_default_title": {
+    "message": "Open side panel"
+  }
+}
