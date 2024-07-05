@@ -27,7 +27,7 @@ logging_level = 10
 logging.getLogger().setLevel(logging_level)
 
 # Google App Engine setting
-site_fqdn = version_dev + '-dot-' + 'vn-sateraito-apps-timecard2.appspot.com'
+site_fqdn = version_dev + '-dot-' + 'vn-sateraito-apps-fileserver2.appspot.com'
 if not http_mode:
     my_site_url = 'https://' + site_fqdn
 else:
@@ -60,6 +60,9 @@ DEFAULT_LANGUAGE = 'ja'
 default_language = DEFAULT_LANGUAGE
 DEFAULT_TIMEZONE = 'Asia/Tokyo'
 DEFAULT_ENCODING = 'SJIS'
+
+KEY_SPLIT_RAW = '__sateraito__'
+KEY_INDEX_EMPTY = '__sateraito_empty__'
 
 DEFAULT_CHAT_SESSION_TIMEOUT = 5 * 60
 
@@ -189,8 +192,19 @@ URLFETCH_TIMEOUT_SECOND = 45
 OAUTH2_SCOPES_OIDC = [
 	'https://www.googleapis.com/auth/userinfo.email',
 	'https://www.googleapis.com/auth/userinfo.profile',
+	'https://www.googleapis.com/auth/admin.directory.user.readonly',
+	'https://www.googleapis.com/auth/admin.directory.group.readonly',
 ]
 
-# For OpenID Connect
-WEBAPP_CLIENT_ID = '515901857322-e3vghkpudg3trq1tcvgesecr9bd5vp31.apps.googleusercontent.com'
-WEBAPP_CLIENT_SECRET = 'FCsg1lXfM_5HxwWHNBmH1Nm9'
+OAUTH2_SCOPES = [
+	'https://www.googleapis.com/auth/userinfo.email',
+	'https://www.googleapis.com/auth/userinfo.profile',
+	'https://www.googleapis.com/auth/admin.directory.user.readonly',
+	'https://www.googleapis.com/auth/admin.directory.group.readonly',
+]
+
+OAUTH2_SCOPES_GMAIL = [
+  'https://mail.google.com/',
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.readonly',
+]

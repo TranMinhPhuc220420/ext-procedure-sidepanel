@@ -6,6 +6,7 @@ import time
 #import logging
 import sateraito_logger as logging
 import sateraito_inc
+import sateraito_func
 
 from flask import Flask, Response, render_template, request, session	#GAEGEN2対応:WebフレームワークとしてFlaskを使用
 from google.appengine.api import wrap_wsgi_app					# GAEGEN2対応:AppEngine API SDKを使用する際に必要（yamlの　app_engine_apis: true　指定も必要）
@@ -82,6 +83,21 @@ notfound.add_url_rules(app)
 import tenant_file
 tenant_file.add_url_rules(app)
 
+import tenant_login
+tenant_login.add_url_rules(app)
+
+from webapp_common import oidccallback
+oidccallback.add_url_rules(app)
+
+@app.route('/gmail_test/<email>/<msg_id>', methods=['GET', 'POST'])
+def unit_gmail_test(email, msg_id):
+
+	logging.info('unit_gmail_test.')
+	data = sateraito_func.getEmailMessage(sateraito_func.getDomainPart(email), email, msg_id, is_draft=True)
+
+	logging.info(str(data))
+	
+	return Response(str(data), status=200)
 
 # GAEGEN2対応：View関数方式でページを定義（本来はflask.views.MethodViewクラス方式を採用だが簡単な処理はView関数でもOK）
 @app.route('/_ah/warmup', methods=['GET', 'POST'])

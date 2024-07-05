@@ -17,10 +17,17 @@ import hashlib
 import pytz
 import bcrypt
 
+import apiclient
+import google_auth_httplib2
+import google.oauth2
+
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.api import namespace_manager
+
+from googleapiclient.discovery import build
+
 import sateraito_inc
 import sateraito_black_list
 from ucf.utils.ucfutil import *
@@ -1107,7 +1114,6 @@ def logoutIfUserDisabled(helper, viewer_email, user_entry=None):
 	if need_logout:
 		# clear session value
 		helper.setSession('viewer_email', '')
-		helper.setSession('login_with', None)
 		helper.setSession('loggedin_timestamp', None)  # G Suiteのマルチログイン時にiframe内でOIDC認証ができなくなったので強制で少しだけ高速化オプションする対応＆SameSite対応 2019.10.28
 		helper.setSession('opensocial_viewer_id', '')
 		helper.setSession('is_oidc_loggedin', False)
@@ -1161,3 +1167,155 @@ def isSameSiteCookieSupportedUA(strAgent):
 
 	logging.debug('isSameSiteCookieSupportedUA=%s' % (is_supported))
 	return is_supported
+
+
+API_TIMEOUT_SECONDS = 10
+API_TIMEOUT_SECONDS_DRIVE = (60 * 60 * 1)
+
+def get_authorized_http(viewer_email, google_apps_domain, scope=sateraito_inc.OAUTH2_SCOPES, timeout_seconds=API_TIMEOUT_SECONDS, is_sub=False):
+	logging.info('get_authorized_http')
+	if is_sub is True:
+		logging.debug('is_sub:True')
+
+	logging.debug('=========get_authorized_http:scope===============')
+	logging.debug(scope)
+
+	old_namespace = namespace_manager.get_namespace()
+	logging.debug(old_namespace)
+	try:
+		namespace_manager.set_namespace(google_apps_domain)
+		memcache_expire_secs = 60 * 60 * 1
+		memcache_key = 'script=getauthorizedhttp&v=2&google_apps_domain=' + google_apps_domain + '&email_to_check=' + viewer_email + '&scope=' + str(scope) + '&g=2'
+
+		# （参考）https://developers.google.com/identity/protocols/oauth2/service-account
+		service_account_info = sateraito_inc.service_account_info
+		credentials = google.oauth2.service_account.Credentials.from_service_account_info(
+			service_account_info,
+			scopes=scope,
+		)
+		credentials = credentials.with_subject(viewer_email)
+		dict_token_info = memcache.get(memcache_key)
+		# @UndefinedVariable
+		bool_token_is_valid = False
+		if dict_token_info:
+			logging.debug('get_authorized_http: cache found.')
+			credentials.token = dict_token_info.get('token')
+			credentials.expiry = dict_token_info.get('expiry')
+			bool_token_is_valid = credentials.valid
+
+		if not bool_token_is_valid:
+			http = apiclient.http.build_http()
+			request = google_auth_httplib2.Request(http)
+			credentials.refresh(request)
+			if credentials.valid:
+				dict_token_info = {
+					'token': credentials.token,
+					'expiry': credentials.expiry,
+				}
+				if not memcache.set(key=memcache_key, value=dict_token_info, time=memcache_expire_secs):  # @UndefinedVariable
+					logging.warning("get_authorized_http: Memcache set failed.")
+				else:
+					logging.warning('get_authorized_http: credentials.refresh')
+
+			logging.debug('credentials.token	= ' + str(credentials.token))
+			logging.debug('credentials.expiry = ' + str(credentials.expiry))
+
+		# return http
+		return credentials
+	except Exception as e:
+		logging.exception(e)
+	finally:
+		# set old namespace
+		namespace_manager.set_namespace(old_namespace)
+
+def get_gmail_service(viewer_email, google_apps_domain):
+	# http = get_authorized_http(viewer_email, google_apps_domain, sateraito_inc.OAUTH2_SCOPES_GMAIL)
+	credentials = get_authorized_http(viewer_email, google_apps_domain, sateraito_inc.OAUTH2_SCOPES_GMAIL)
+	return build('gmail', 'v1', credentials=credentials)
+
+def getBodyInPart(item_part):
+  body = None
+  try:
+    # item_partid = item_part['partId']
+    item_file_name = item_part['filename']
+    item_mime_type = item_part['mimeType']
+    item_body = item_part['body']
+    if item_mime_type == 'text/plain' and item_file_name == '' and item_body:
+      if 'data' in item_body and item_body['data']:
+        body = base64.urlsafe_b64decode(item_body['data'].encode('UTF-8'))
+
+    if body is None:
+      if 'parts' in item_part:
+        sub_parts = item_part['parts']
+        for item in sub_parts:
+          body = getBodyInPart(item)
+          if body:
+            break
+
+  except Exception as e:
+    logging.error(e)
+
+  return body
+
+def parseEmail(data):
+  email = ''
+  if data is None:
+    return email
+  # data_decode = data.decode('unicode-escape')
+  list = re.findall(r'[\w\.-]+@[\w\.-]+', data)
+  if len(list) > 0:
+    email = sateraito_inc.KEY_SPLIT_RAW.join(list)
+  return email
+
+def getEmailMessage(google_apps_domain, email, message_id, is_draft=False):
+    logging.info('=======getEmailMessage==========')
+    # logging.info(message_id)
+    # logging.info(email)
+	
+    data = {
+      'msg_id': message_id,
+      'subject': '',
+      'body': '',
+      'from': '',
+      'to': ''
+    }
+	
+    try:
+      gmail_service = get_gmail_service(email, google_apps_domain)
+      if gmail_service:
+        if is_draft:
+          result = gmail_service.users().drafts().get(userId=email, id=message_id).execute()
+          payload = result['message']['payload']
+        else:
+          result = gmail_service.users().messages().get(userId=email, id=message_id).execute()
+          payload = result['payload']
+
+        logging.info(str(result))
+        logging.info(str(payload))
+
+        if payload:
+          # HEADER
+          headers = payload.get('headers')
+          for item in headers:
+            if item['name'] == 'From':
+              data['from'] = parseEmail(item['value'])
+            if item['name'] == 'To':
+              data['to'] = parseEmail(item['value'])
+            if item['name'] == 'Cc':
+              data['cc'] = parseEmail(item['value'])
+            if item['name'] == 'Bcc':
+              data['bcc'] = parseEmail(item['value'])
+            if item['name'] == 'Subject':
+              data['subject'] = item['value']
+
+          # PARTS
+          parts = payload.get('parts')
+          for item2 in parts:
+            body = getBodyInPart(item2)
+            if body:
+              data['body'] = str(body.decode())
+              break
+    except Exception as e:
+      logging.error(e)
+
+    return data

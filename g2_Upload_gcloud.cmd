@@ -1,5 +1,5 @@
 @REM SET PROJECT=ext-procedure-side-panel
-SET PROJECT=vn-sateraito-apps-timecard2
+SET PROJECT=vn-sateraito-apps-fileserver2
 SET VERSION=ext2005
 
 TITLE %PROJECT% ver=%VERSION%(gcloud)
