@@ -6,8 +6,12 @@
   "minimum_chrome_version": "116",
   "default_locale": "ja",
   "permissions": [
+    "activeTab",
     "sidePanel",
-    "nativeMessaging"
+    "storage",
+    "identity",
+    "identity.email",
+    "scripting"
   ],
   "content_scripts": [
     {

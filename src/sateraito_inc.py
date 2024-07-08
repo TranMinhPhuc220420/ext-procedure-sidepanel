@@ -16,6 +16,7 @@ version = '200520001'
 version_dev = 'ext2005'
 
 import logging
+
 # ログ出力レベル
 # 0：全部（10と同じ）
 # 10：調査用のデバッグログも出力（調査時のみ指定）
@@ -29,9 +30,9 @@ logging.getLogger().setLevel(logging_level)
 # Google App Engine setting
 site_fqdn = version_dev + '-dot-' + 'vn-sateraito-apps-fileserver2.appspot.com'
 if not http_mode:
-    my_site_url = 'https://' + site_fqdn
+  my_site_url = 'https://' + site_fqdn
 else:
-    my_site_url = 'http://' + site_fqdn
+  my_site_url = 'http://' + site_fqdn
 
 # Cookieのドメイン設定（別サーバーの緊急モードサイトとも申請データを共存させるため）
 cookie_domain = ''
@@ -41,9 +42,9 @@ MANAGE_EMAIL = 'asao@baytech.co.jp,haraguchi@baytech.co.jp'
 MANAGE_DOMAIN = 'baytech.co.jp'
 MANAGE_PROTECT_CODE = '342e0527423a422fad170c93886a56e4'
 # key publish email
-PUBLISH_KEY_EMAILS = ['haraguchi@baytech.co.jp','asao@baytech.co.jp']
+PUBLISH_KEY_EMAILS = ['haraguchi@baytech.co.jp', 'asao@baytech.co.jp']
 # sales email…営業メンバーメール
-#SALES_MEMBERS_EMAILS = ['contact-info@sateraito.co.jp','asao@sateraito.co.jp']
+# SALES_MEMBERS_EMAILS = ['contact-info@sateraito.co.jp','asao@sateraito.co.jp']
 SALES_MEMBERS_EMAILS = ['asao@sateraito.co.jp']
 
 LIST_USER_IS_ADMIN = ['test@vn2.sateraito.co.jp', 'phuc@vnd.sateraito.co.jp']
@@ -52,9 +53,9 @@ SENDER_EMAIL = 'admin@satelaito.jp'
 SUPERVISOR_EMAIL = 'asao@sateraito.co.jp'
 DEFAULT_REPLY_TO_EMAIL = 'contact-info@sateraito.co.jp'
 
-MANAGER_SITE_ACCEPT_IP_ADDRESS_LIST = ('127.0.0.1/32','202.215.197.120/29')
+MANAGER_SITE_ACCEPT_IP_ADDRESS_LIST = ('127.0.0.1/32', '202.215.197.120/29')
 
-max_password_history_count = 10		# パスワード履歴を保持する最大件数（デフォルト. 将来的にはドメインごとに設定もあり）
+max_password_history_count = 10  # パスワード履歴を保持する最大件数（デフォルト. 将来的にはドメインごとに設定もあり）
 
 DEFAULT_LANGUAGE = 'ja'
 default_language = DEFAULT_LANGUAGE
@@ -77,7 +78,6 @@ TENANT_ID_FOR_PERSONALUSER = 'sateraitooffice.personal'
 # ref: https://cloud.google.com/appengine/docs/legacy/standard/python/search#field-accuracy
 ES_ROUND_DATETIME_AS_GAE = False
 
-
 ES_MULTI_TENANT_SAME_INDEX = True
 ES_CREATE_INDEX_ALIAS_FOR_NAMESPACE = True
 
@@ -97,7 +97,6 @@ ES_DOCUMENT_KEY_INTERNAL_NAMESPACE = "@namespace"
 ES_DOCUMENT_KEY_INTERNAL_ID = "@id"
 ES_DOCUMENT_KEY_INTERNAL_TIMESTAMP = "@timestamp"
 
-
 # ES_CLOUD_ID = "Sateraito_Dev:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvOjQ0MyRkNmMzZGQ0YmZmNTY0ZWU1OGNlMzRmZjMzOTU5ZDZjNiQyYjU2ODk5NmQ4Njk0OTFmYjQ1OWM0ODJmNTBmZTA3NA=="
 ES_CLOUD_ID = "SateraitoPro:YXNpYS1ub3J0aGVhc3QxLmdjcC5jbG91ZC5lcy5pbzo0NDMkN2QwMzQxODdhZDNmNDFkNzgzYTI5YzAyZGMyM2Q5MGQkZWE5NjUwZjZjNzg0NGQ0MTk4MTViMDE0OTgxYzEwODY="
 
@@ -106,7 +105,6 @@ ES_AUTH_USER = "elastic"
 ES_AUTH_PASSWORD = "BBRQ690SEDnvj0QZQr2j1poD"
 
 ES_HTTP_AUTH = (ES_AUTH_USER, ES_AUTH_PASSWORD)
-
 
 ES_ELASTICSEARCH_TIMEOUT = 30
 
@@ -144,12 +142,10 @@ ES_INDEX_MAPPINGS = (
   }),
 )
 
-
 ES_USE_ELASTICSEARCH_DOMAINS = {
   "vn2.sateraito.co.jp": True,
   "sateraito.jp": True,
 }
-
 
 ES_MIGRATE_KEY = 'Sateraito@2023'
 
@@ -189,22 +185,18 @@ FIREBASE_CONFIG = {
 
 URLFETCH_TIMEOUT_SECOND = 45
 
-OAUTH2_SCOPES_OIDC = [
-	'https://www.googleapis.com/auth/userinfo.email',
-	'https://www.googleapis.com/auth/userinfo.profile',
-	'https://www.googleapis.com/auth/admin.directory.user.readonly',
-	'https://www.googleapis.com/auth/admin.directory.group.readonly',
-]
-
 OAUTH2_SCOPES = [
-	'https://www.googleapis.com/auth/userinfo.email',
-	'https://www.googleapis.com/auth/userinfo.profile',
-	'https://www.googleapis.com/auth/admin.directory.user.readonly',
-	'https://www.googleapis.com/auth/admin.directory.group.readonly',
+  'https://mail.google.com',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/admin.directory.user.readonly',
+  'https://www.googleapis.com/auth/admin.directory.group.readonly',
 ]
 
 OAUTH2_SCOPES_GMAIL = [
-  'https://mail.google.com/',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://mail.google.com',
+]
+
+OAUTH2_SCOPES_FOR_CHECK_ADMIN = [
+  'https://www.googleapis.com/auth/admin.directory.user.readonly',
 ]

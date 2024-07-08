@@ -7,5 +7,30 @@
   },
   "extension_action_default_title": {
     "message": "Open side panel"
+  },
+  
+  "txt_logout": {
+    "message": "Logout"
+  },
+  "txt_login": {
+    "message": "Login"
+  },
+  "txt_description_login": {
+    "message": "Welcome to Sateraito Office Side Panel AI – your powerful tool for quickly and efficiently creating and drafting email content, documents, and scheduling!"
+  },
+  "txt_login_width_google": {
+    "message": "Continue width Google"
+  },
+  "txt_privacy_policy_terms_of_use": {
+    "message": "By continuing, you agree to the <a target='_blank' href='https://www.sateraito.jp/privacy.html'>Privacy Policy</a> & <a target='_blank' href='https://docs.google.com/document/d/1nmN-G2t9H6mn4XIhpD4UuTaLOg7ao01iJt_K68X-v70/view'>Terms of Use</a>"
+  },
+  "msg_welcome_back_after_auto_login": {
+    "message": "Welcome back"
+  },
+  "msg_login_success": {
+    "message": "Login successful"
+  },
+  "msg_login_failed": {
+    "message": "Login failed"
   }
 }

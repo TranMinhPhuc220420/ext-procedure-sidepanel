@@ -13,7 +13,6 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     measurementId: "G-WTQXNPQECY",
   };
 
-
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
 
@@ -32,4 +31,20 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
     console.log(data);
   });
 
+  /**
+   * Initialize app
+   * 
+   */
+  function _initExt() {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: true })
+      .catch((error) => console.error(error));
+
+    chrome.tabs.create({
+      active: true,
+      url: "/sign-in.html"
+    })
+  }
+
+  chrome.runtime.onInstalled.addListener(_initExt);
 })();

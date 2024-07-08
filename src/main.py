@@ -128,7 +128,7 @@ def handle_notfound(e):
 	logging.warning(e)
 	return 'Not Found', 404
 @app.errorhandler(500)
-def handle_internalservererror(e):
+def handle_internal_server_error(e):
 	logging.exception(e)
 	return 'Internal Server Error', 500
 

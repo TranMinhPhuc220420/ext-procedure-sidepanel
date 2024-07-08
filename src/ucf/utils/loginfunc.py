@@ -1,18 +1,20 @@
 # coding: utf-8
 
-import os,sys,datetime,logging,random,json
-import re,sre_constants
-from ucf.utils.models import UCFMDLLoginHistory,UCFMDLLoginHistoryDetail
+import os, sys, datetime, logging, random, json
+import re, sre_constants
+
+from google.appengine.api import taskqueue
+
 from ucf.utils.ucfutil import *
-from ucf.config.ucfconfig import *
 from ucf.utils.helpers import *
+from ucf.config.ucfconfig import *
 from ucf.pages.operator import OperatorUtils
 from ucf.pages.login_history import LoginHistoryUtils
-import sateraito_func
-import sateraito_inc
+
 import oem_func
-from google.appengine.api import taskqueue
 import jwt_custom
+import sateraito_inc
+import sateraito_func
 
 #+++++++++++++++++++++++++++++++++++++++
 #+++ ログイン認証

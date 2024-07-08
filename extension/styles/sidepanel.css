@@ -1,0 +1,268 @@
+@charset "UTF-8";
+:root {
+  --base-text-color: #2a2a2a;
+  --background-tooltip-color: #4e4e4e;
+  --default-text-color: rgba(0, 0, 0, 87);
+  --white-color: #fff;
+  --border-danger-color: #f5c2c7;
+  --background-black-color: #2a2a2a;
+  --background-gray-color: #f7f7f7;
+  --background-gray-2-color: #f4f4f4;
+  --background-button-hover: #dedede;
+  --background-danger-color: #f8d7da;
+  --background-black-gray-color: #575757;
+  --background-success-color: #3bb74d;
+  --background-danger-color: #f8d7da;
+  --base-text-gray-color: #ddd;
+  --base-text-danger-color: #842029;
+  --base-color: #8d5bef;
+  --base-color-2: #ae8cf2;
+  --base-color-3: #e4d5ff;
+  --base-color-4: #f6f2ff;
+  --base-color-5: #6135bb;
+  --base-text-button-color: #fff;
+  --sidebar-action-btn: #e8e8e8;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "メイリオ, arial, tahoma, helvetica, sans-serif";
+}
+body h1,
+body h2,
+body h3,
+body h4,
+body h5,
+body h6,
+body p {
+  margin: 0;
+  padding: 0;
+}
+body ul {
+  margin: 0;
+  padding: 0;
+}
+body ul li {
+  list-style: none;
+}
+
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 9999px;
+}
+
+#root_sign_in {
+  height: 100%;
+  width: 100%;
+}
+#root_sign_in .hidden {
+  display: none !important;
+}
+#root_sign_in .sign-in-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#root_sign_in .sign-in-container .wrap-form-login {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  max-width: 480px;
+  padding: 0 20px;
+}
+#root_sign_in .sign-in-container .wrap-form-login .title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+#root_sign_in .sign-in-container .wrap-form-login .title .wrap-logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 40px;
+}
+#root_sign_in .sign-in-container .wrap-form-login .title .wrap-name-ext h1 {
+  font-size: 1.5rem;
+}
+#root_sign_in .sign-in-container .wrap-form-login .title .des-ext {
+  font-size: 1rem;
+}
+#root_sign_in .sign-in-container .wrap-form-login .title .des-ext,
+#root_sign_in .sign-in-container .wrap-form-login .title .wrap-name-ext {
+  text-align: center;
+  margin-bottom: 10px;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 30px;
+  background-color: var(--base-color);
+  color: var(--base-text-button-color);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.25s all;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google:hover {
+  background-color: var(--base-color-5);
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google:hover .icon .wrap-loading::before {
+  background-color: var(--base-color-5);
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google.is-loading .icon .wrap-loading {
+  display: block;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google.login-success {
+  background-color: var(--background-success-color) !important;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google:disabled {
+  pointer-events: none;
+  cursor: none;
+  background-color: var(--base-color-2);
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google:disabled .icon .wrap-loading::before {
+  background-color: var(--base-color-2);
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google .icon {
+  margin-right: 10px;
+  position: relative;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google .icon .wrap-loading {
+  display: none;
+  position: absolute;
+  width: 23px;
+  height: 23px;
+  top: -3px;
+  left: -3px;
+  border: 2px solid var(--base-text-button-color);
+  border-radius: 50%;
+  animation: rotate_loading 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google .icon .wrap-loading::before {
+  content: "";
+  height: 10px;
+  width: 5px;
+  position: absolute;
+  background-color: var(--base-color);
+  top: 0px;
+  left: -3px;
+  z-index: 0;
+  transform: rotate(30deg);
+  transition: 0.25s all;
+}
+#root_sign_in .sign-in-container .wrap-form-login .body .form-login #sign-in-with-google .text {
+  font-weight: 600;
+  pointer-events: none;
+}
+#root_sign_in .sign-in-container .wrap-form-login .footer span {
+  color: var(--base-color);
+}
+
+.loading {
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px !important;
+}
+.loading::before {
+  content: "";
+  position: absolute;
+  border-radius: 5px;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, var(--white-color), var(--base-color-3), var(--white-color));
+  background-size: 200% 100%;
+  animation: slide 1.5s linear infinite;
+}
+
+@keyframes slide {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes space_loading_gpt {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes rotate_loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tooltip_show {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes listen {
+  0% {
+    -webkit-transform: scale(2);
+  }
+  25% {
+    -webkit-transform: scale(1.25);
+  }
+  35% {
+    -webkit-transform: scale(1.1);
+  }
+  65% {
+    -webkit-transform: scale(1);
+  }
+  80% {
+    -webkit-transform: scale(2.5);
+  }
+  to {
+    -webkit-transform: scale(3);
+  }
+}
+@keyframes listen2 {
+  0% {
+    -webkit-transform: scale(2.5);
+  }
+  25% {
+    -webkit-transform: scale(2);
+  }
+  35% {
+    -webkit-transform: scale(1.1);
+  }
+  65% {
+    -webkit-transform: scale(2);
+  }
+  80% {
+    -webkit-transform: scale(1);
+  }
+  to {
+    -webkit-transform: scale(1.5);
+  }
+}/*# sourceMappingURL=sidepanel.css.map */

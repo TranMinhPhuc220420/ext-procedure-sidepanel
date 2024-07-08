@@ -26,12 +26,12 @@ import sateraito_func
 ############################################################
 class LoginPage(WebappHelper):
 
-	def processOfRequest(self, tenant):
+	def processOfRequest(self):
 		try:
 			self._approot_path = os.path.dirname(__file__)
 
 			# check login
-			is_ok, body_for_not_ok = self.oidAutoLogin(tenant)
+			is_ok, body_for_not_ok = self.oidAutoLogin()
 			logging.info("check login=" + str(is_ok))
 
 			if not is_ok:
@@ -54,7 +54,7 @@ class LoginPage(WebappHelper):
 ############################################################
 class LogoutPage(WebappHelper):
 
-	def processOfRequest(self, tenant):
+	def processOfRequest(self):
 		try:
 			self._approot_path = os.path.dirname(__file__)
 			# if self.isValidTenant() == False:
@@ -91,6 +91,6 @@ class LogoutPage(WebappHelper):
 
 # GAEGEN2対応:webapp2ライブラリ廃止→Flask移行. URLはwerkzeugの正規表現書式を使用可能. 従来の末尾の「$」は使用不可. as_view('XXX') はプロダクトを通して一意である必要あり
 def add_url_rules(app):
-	app.add_url_rule('/a/<tenant>/login',  view_func=LoginPage.as_view(__name__ + '.LoginPage'))
+	app.add_url_rule('/a/login',  view_func=LoginPage.as_view(__name__ + '.LoginPage'))
 
-	app.add_url_rule('/a/<tenant>/logout',  view_func=LogoutPage.as_view(__name__ + '.LogoutPage'))
+	app.add_url_rule('/a/logout',  view_func=LogoutPage.as_view(__name__ + '.LogoutPage'))

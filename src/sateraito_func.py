@@ -4,8 +4,6 @@
 __author__ = 'T.ASAO <asao@sateraito.co.jp>'
 
 import re
-# GAEGEN2対応:Loggerをカスタマイズ
-#import logging
 import sateraito_logger as logging
 import datetime
 import random
@@ -13,7 +11,6 @@ import json
 import time
 from dateutil import zoneinfo, tz
 import hashlib
-#import unicodedata
 import pytz
 import bcrypt
 
@@ -21,18 +18,20 @@ import apiclient
 import google_auth_httplib2
 import google.oauth2
 
-from google.appengine.ext import ndb
 from google.appengine.api import memcache
 from google.appengine.api import taskqueue
 from google.appengine.api import namespace_manager
 
 from googleapiclient.discovery import build
 
+from google.auth.exceptions import RefreshError
+from googleapiclient.errors import HttpError
+
+from ucf.utils.models import GoogleAppsDomainEntry, GoogleAppsUserEntry
+
 import sateraito_inc
-import sateraito_black_list
 from ucf.utils.ucfutil import *
 import base64
-#import httplib, urllib
 from ucf.utils.ucfxml import UcfXml
 
 LIST_LANGUAGE = [sateraito_inc.DEFAULT_LANGUAGE, 'en', 'vi', 'fr', 'ko', 'cn', 'th']
@@ -357,6 +356,64 @@ ACTIVE_TIMEZONES = [
 		'Pacific/Kiritimati'
 	]
 
+API_TIMEOUT_SECONDS = 10
+API_TIMEOUT_SECONDS_DRIVE = (60 * 60 * 1)
+
+class ImpersonateMailException(Exception):
+	def __init__(self):
+		pass
+
+class NotInstalledException(Exception):
+	""" exception: this application is not installed to the domain
+"""
+
+	def __init__(self, value):
+		self.value = value
+
+	def __str__(self):
+		return str(self.value)
+
+# class to handle language wording
+class MyLang:
+	root_node = None
+
+	def __init__(self, language):
+		file_name = self.getFileName(language)
+		folder_path = os.path.normpath(os.path.join(os.path.dirname(__file__), 'params'))
+		xml_file_name = os.path.normpath(os.path.join(folder_path, 'lang', file_name))
+		self.root_node = UcfXml.load(xml_file_name)
+
+	def getFileName(self, language):
+		file_name = 'ALL_ALL.xml'
+		if language == 'en':
+			file_name = 'ALL_ALL.xml'
+		elif language == 'ja':
+			file_name = 'ja_ALL.xml'
+
+		return file_name
+
+	def getMsgs(self):
+		if self.root_node is None:
+			return {}
+		nodes = self.root_node.selectNodes('msg')
+		dict = {}
+		for node in nodes:
+			name = node.getAttribute('name')
+			message = node.getInnerText()
+			if name is not None and name != '':
+				dict[name] = message
+		return dict
+
+	def getMsg(self, code):
+		if self.root_node is None:
+			return ''
+		node = self.root_node.selectSingleNode('msg[@name="' + code + '"]')
+		message = ''
+		if node is not None:
+			message = node.getInnerText()
+		return message
+
+
 def datetimeToEpoch(d):
 	return int(time.mktime(d.timetuple()))
 
@@ -410,7 +467,6 @@ def randomShortString(string_length=6):
 		random_string += random.choice(s)
 	return random_string
 
-
 def stringToDateTime(datetime_string):
 	return datetime.datetime.strptime(datetime_string, "%Y/%m/%d %H:%M")
 
@@ -446,10 +502,6 @@ def strToBool(str_param):
 		return True
 	return False
 
-def generateConfirmationCode(string_length=32):
-	random_string = randomString(string_length=string_length)
-	return random_string
-
 def timedeltaToTimeString(timedelta):
 	timedelta_seconds = timedelta.seconds
 
@@ -484,12 +536,12 @@ def boolToNumber(check):
 def timeToString(_time):
 	return _time.strftime("%H:%M")
 
-def datetimeStringtoDateString(datetimeString):
+def datetimeStrToDateString(datetimeString):
 	datetime = stringToDateTime(datetimeString)
 	date = datetime.strftime("%Y/%m/%d")
 	return date
 
-def datetimeStringtoDateString2(datetimeString):
+def datetimeStrToDateString2(datetimeString):
 	datetime = stringToDateTime(datetimeString)
 	date = datetime.strftime("%Y-%m-%d")
 	return date
@@ -522,46 +574,6 @@ def addTaskQueue(t_q, task, max_retry_cnt=3):
 def getDomainFromNamespace(namespace_name):
 	return namespace_name
 
-# class to handle language wording
-class MyLang():
-	root_node = None
-
-	def __init__(self, language):
-		file_name = self.getFileName(language)
-		folder_path = os.path.normpath(os.path.join(os.path.dirname(__file__), 'params'))
-		xml_file_name = os.path.normpath(os.path.join(folder_path, 'lang', file_name))
-		self.root_node = UcfXml.load(xml_file_name)
-
-	def getFileName(self, language):
-		file_name = 'ALL_ALL.xml'
-		if language == 'en':
-			file_name = 'ALL_ALL.xml'
-		elif language == 'ja':
-			file_name = 'ja_ALL.xml'
-
-		return file_name
-
-	def getMsgs(self):
-		if self.root_node is None:
-			return {}
-		nodes = self.root_node.selectNodes('msg')
-		dict = {}
-		for node in nodes:
-			name = node.getAttribute('name')
-			message = node.getInnerText()
-			if name is not None and name != '':
-				dict[name] = message
-		return dict
-
-	def getMsg(self, code):
-		if self.root_node is None:
-			return ''
-		node = self.root_node.selectSingleNode('msg[@name="' + code + '"]')
-		message = ''
-		if node is not None:
-			message = node.getInnerText()
-		return message
-
 def toUtcTime(date_localtime, timezone=None):
 	""" Args: date_localtime ... datetime
 												timezone ... timezone name
@@ -584,18 +596,6 @@ def UtcToLocal(utc):
 	local_datetime = utc.replace(tzinfo=pytz.UTC).astimezone(local_tz)
 
 	return dateTimeToString(local_datetime)
-
-def TextShortent(string,char_number):
-	remind_item_title_string = ""
-
-	for item in string:
-		remind_item_title_string += item
-
-		if len(remind_item_title_string) > char_number:
-			remind_item_title_string += "..."
-			break
-
-	return remind_item_title_string
 
 # Check time with format 09:20
 def checkTime(strtime):
@@ -653,30 +653,30 @@ def encodeXMLText(text):
 		text = text.replace('>', '&gt;')
 		return text
 
-def addUpdateUserEntryTaskQueue(tenant, operator_entry):
-
-	try:
-
-		# token作成
-		token = UcfUtil.guid()
-		params = {
-				'user_email': operator_entry.operator_id_lower,
-				'is_admin': 'ADMIN' in operator_entry.access_authority if operator_entry.access_authority is not None else False,
-		}
-		# taskに追加 まるごと
-		import_q = taskqueue.Queue('userentry-set-queue')
-		import_t = taskqueue.Task(
-				url='/a/' + tenant + '/openid/' + token + '/regist_user_entry',
-				params=params,
-				target='default',
-				countdown='0'
-		)
-		import_q.add(import_t)
-		logging.info('add task queue userentry-set-queue')
-
-	except Exception as e:
-		logging.info('failed add update user entry taskqueue. tenant=' + tenant + ' user=' + operator_entry.operator_id)
-		logging.exception(e)
+# def addUpdateUserEntryTaskQueue(tenant, operator_entry):
+#
+# 	try:
+#
+# 		# token作成
+# 		token = UcfUtil.guid()
+# 		params = {
+# 				'user_email': operator_entry.operator_id_lower,
+# 				'is_admin': 'ADMIN' in operator_entry.access_authority if operator_entry.access_authority is not None else False,
+# 		}
+# 		# taskに追加 まるごと
+# 		import_q = taskqueue.Queue('userentry-set-queue')
+# 		import_t = taskqueue.Task(
+# 				url='/a/' + tenant + '/openid/' + token + '/regist_user_entry',
+# 				params=params,
+# 				target='default',
+# 				countdown='0'
+# 		)
+# 		import_q.add(import_t)
+# 		logging.info('add task queue userentry-set-queue')
+#
+# 	except Exception as e:
+# 		logging.info('failed add update user entry taskqueue. tenant=' + tenant + ' user=' + operator_entry.operator_id)
+# 		logging.exception(e)
 
 def checkCsrf(request):
 	'''
@@ -691,7 +691,7 @@ def checkCsrf(request):
 
 	strHost = headers.get('Host')
 	strOrigin = headers.get('Origin')
-	strXRequestedWith = headers.get('X-Requested-With') 
+	strXRequestedWith = headers.get('X-Requested-With')
 
 	#if (strHost != sateraito_inc.site_fqdn):
 	if (strHost != sateraito_inc.site_fqdn):
@@ -710,70 +710,18 @@ def checkCsrf(request):
 	logging.info('csrf check is ok.')
 	return True
 
-def get_all_tenant_entry():
-	results = []
-	start = 0
-	limit = 100
-
-	#q = Namespace.all()
-	#domain_list = []
-	#for row in q:
-	#	if row.namespace_name != '':
-	#		domain_list.append(row.namespace_name)
-
-	q = TenantEntry.all()
-	fetch_data = None
-	if q:
-		each_entrys = None
-		while each_entrys is None or len(each_entrys) > 0:
-			each_entrys = []
-			fetch_data = q.fetch(limit, start)
-			for entry in fetch_data:
-				each_entrys.append(entry)
-			results.extend(each_entrys)
-			start += limit
-	return results
-
-# ユーザエントリの登録、更新
-def registUserEntry(user_email, is_admin, is_disable_user, sign_with='', email_verified=False):
-	strOldNamespace = namespace_manager.get_namespace()
-	namespace_manager.set_namespace('')
-
-	logging.info('registUserEntry...')
-	logging.info('user_email=' + user_email)
-	logging.info('is_admin=' + str(is_admin))
-	user_email = user_email.lower()
-	try:
-		# check user entry in datastore
-		user_entry = UserEntry.getInstance(user_email)
-		if user_entry is None:
-			# create user entry on Datastore
-			new_user_entry = UserEntry(id=user_email)
-			new_user_entry.user_email = user_email
-			new_user_entry.sign_with = sign_with
-			new_user_entry.disable_user = False
-
-			if is_admin:
-				new_user_entry.is_admin = True
-			else:
-				new_user_entry.is_admin = False
-			new_user_entry.put()
-		else:
-			if user_entry.user_email == user_email and user_entry.sign_with != sign_with:
-				return False, 'Email with other registered users'
-
-			# update user entry on Datastore
-			if is_admin:
-				user_entry.is_admin = True
-			else:
-				user_entry.is_admin = False
-			user_entry.put()
-
-		namespace_manager.set_namespace(strOldNamespace)
-		return True, ''
-	except Exception as error:
-		namespace_manager.set_namespace(strOldNamespace)
-		raise error
+# seconds to wait till next retry
+# 1, 2, 4, 8, 16, 32, 60, 60, 60, 60,  ...(default max interval)
+# 3, 6, 12, 24, 48, 60, 60, 60, 60, 60,  ...(default max interval, hard_sleep)
+# 1, 2, 4, 8, 16, 32, 64, 128, 256, 512,  ...(max_interval=7200)
+# 3, 6, 12, 24, 48, 96, 192, 384, 768, 1536,  ...(max_interval=7200, hard_sleep)
+def timeToSleep(num_retry, max_interval=60, hard_sleep=False):
+	sleep_time = 2 ** num_retry
+	if hard_sleep:
+		sleep_time = sleep_time * 3
+	if sleep_time > max_interval:
+		sleep_time = max_interval
+	return sleep_time
 
 def getDomainPart(p_email_address):
 	a_email_address = p_email_address.split('@')
@@ -783,33 +731,85 @@ def getUserIDPart(p_email_address):
 	a_email_address = p_email_address.split('@')
 	return a_email_address[0]
 
-# TenantEntryに1件登録（存在しない場合だけ.以降はタスクで処理）
-def insertTenantEntry(tenant, is_free_mode=True):
-	tenant = tenant.lower()
-	q = TenantEntry.gql("where tenant = :1", tenant.lower())
-	tenant_entry = q.get()
-	if tenant_entry is None:
-		tenant_entry = TenantEntry()
-		tenant_entry.tenant = tenant
-		tenant_entry.num_users = 0
-		tenant_entry.max_users = 0
-		tenant_entry.available_users = sateraito_inc.DEFAULT_AVAILABLE_USERS
-		tenant_entry.is_free_mode = is_free_mode
-		tenant_entry.is_disable = False
+# GoogleAppsDomainEntryに1件登録（存在しない場合だけ.以降はタスクで処理）
+def insertGoogleAppsDomainEntry(google_apps_domain, target_google_apps_domain, is_free_mode=True, not_send_setup_mail=False):
+	logging.debug('insertDomainEntry start...')
+	google_apps_domain = google_apps_domain.lower()
+	old_namespace = namespace_manager.get_namespace()
+	namespace_manager.set_namespace(google_apps_domain)
+
+	# プライマリドメインのネームスペースにセカンダリドメインレコードを登録するように修正 2017.11.09
+	# q =	sateraito_db.GoogleAppsDomainEntry.gql("where google_apps_domain = :1", google_apps_domain)
+	q = GoogleAppsDomainEntry.gql("where google_apps_domain = :1", target_google_apps_domain)
+	new_domain_entry = q.get()
+
+	if new_domain_entry is None:
+		new_domain_entry = GoogleAppsDomainEntry()
+		new_domain_entry.google_apps_domain = google_apps_domain
+		new_domain_entry.num_users = 0
+		new_domain_entry.max_users = 0
+		new_domain_entry.available_users = sateraito_inc.DEFAULT_AVAILABLE_USERS
+		new_domain_entry.impersonate_email = ''
+		new_domain_entry.is_oauth2_domain = False
+		new_domain_entry.no_auto_logout = True  # True for new domain		# 新規環境では高速化オプションを有効にセット 2016.08.25
+		new_domain_entry.is_free_mode = is_free_mode
+		new_domain_entry.is_disable = False
 
 		# インストールセット公開に伴い30日利用制限をかける対応 2014.03.10
 		# GAEGEN2対応
 		#dt_now = datetime.datetime.now()
 		dt_now = datetime.datetime.utcnow()
 		dt_expire = UcfUtil.add_days(dt_now, 30)		# 当日を入れて31日（厳密でなくてもよいとは思うが...）
-		tenant_entry.available_start_date = dt_now.strftime('%Y/%m/%d')
-		tenant_entry.charge_start_date = dt_expire.strftime('%Y/%m/%d')
-		tenant_entry.cancel_date = dt_expire.strftime('%Y/%m/%d')
+		new_domain_entry.available_start_date = dt_now.strftime('%Y/%m/%d')
+		new_domain_entry.charge_start_date = dt_expire.strftime('%Y/%m/%d')
+		new_domain_entry.cancel_date = dt_expire.strftime('%Y/%m/%d')
 
-		tenant_entry.put()
-	return tenant_entry
+		new_domain_entry.put()
+		# if not not_send_setup_mail:
+		# 	sendThankYouMailAndSetupNotificationMail(new_domain_entry, is_send_thank_you_mail=False, is_send_setup_mail=True)
 
-def setNumTenantUser(tenant, tenant_entry, num_users, max_users=None):
+	namespace_manager.set_namespace(old_namespace)
+	return new_domain_entry
+
+# ユーザエントリの登録、更新
+def registerUserEntry(user_email, google_apps_domain, is_admin, is_disable_user, sign_with='', email_verified=False):
+	str_old_namespace = namespace_manager.get_namespace()
+	namespace_manager.set_namespace(google_apps_domain)
+
+	logging.info('registerUserEntry...')
+	logging.info('user_email=' + user_email)
+	logging.info('is_admin=' + str(is_admin))
+	user_email = str(user_email).lower()
+	try:
+		# check user entry in datastore
+		user_entry = GoogleAppsUserEntry.getInstance(google_apps_domain, user_email)
+		if user_entry is None:
+			# create user entry on Datastore
+			new_user_entry = GoogleAppsUserEntry(id=user_email)
+			new_user_entry.user_email = user_email
+
+			if is_admin:
+				new_user_entry.is_admin = True
+			else:
+				new_user_entry.is_admin = False
+			new_user_entry.put()
+		else:
+			# update user entry on Datastore
+			if is_admin:
+				user_entry.is_admin = True
+			else:
+				user_entry.is_admin = False
+
+			user_entry.put()
+
+		namespace_manager.set_namespace(str_old_namespace)
+		return True, ''
+
+	except Exception as error:
+		namespace_manager.set_namespace(str_old_namespace)
+		raise error
+
+def setNumTenantUser(google_apps_domain, domain_entry, num_users, max_users=None):
 	'''
 	Set number of domain users
 	'''
@@ -817,74 +817,80 @@ def setNumTenantUser(tenant, tenant_entry, num_users, max_users=None):
 	old_namespace = namespace_manager.get_namespace()
 	namespace_manager.set_namespace('')
 
-	if tenant_entry is None:
-		tenant = tenant.lower()
-		q = TenantEntry.all()
-		q.filter('tenant =', tenant)
-		tenant_entry = q.get()
-	if tenant_entry is not None:
+	if domain_entry is None:
+		google_apps_domain = google_apps_domain.lower()
+		q = GoogleAppsDomainEntry.query()
+		domain_entry = q.get()
+
+	if domain_entry is not None:
 		is_need_edit = False
-		if tenant_entry.num_users is None or tenant_entry.num_users < num_users:
-			tenant_entry.num_users = num_users
+		if domain_entry.num_users is None or domain_entry.num_users < num_users:
+			domain_entry.num_users = num_users
 			is_need_edit = True
-		if max_users is not None and (tenant_entry.max_users is not None or tenant_entry.max_users < max_users):
-			tenant_entry.max_users = max_users
+		if max_users is not None and (domain_entry.max_users is not None or domain_entry.max_users < max_users):
+			domain_entry.max_users = max_users
 			is_need_edit = True
+
 		if is_need_edit:
-			tenant_entry.updated_date = UcfUtil.getNow()
-			tenant_entry.put()
+			domain_entry.updated_date = UcfUtil.getNow()
+			domain_entry.put()
+
 	namespace_manager.set_namespace(old_namespace)
 
 # 最終利用月を更新
-def updateDomainLastLoginMonth(tenant):
+def updateDomainLastLoginMonth(google_apps_domain):
 	strOldNamespace = namespace_manager.get_namespace()
 	namespace_manager.set_namespace('')
+
 	try:
-		q = TenantEntry.all()
-		q.filter('tenant =', tenant.lower())
-		tenant_entry = q.get()
+		q = GoogleAppsDomainEntry.query()
+		q.filter(GoogleAppsDomainEntry.google_apps_domain == google_apps_domain)
+		domain_entry = q.get()
 		is_updated = False
-		if tenant_entry is not None:
-			is_updated = tenant_entry.updateLastLoginMonth()
+		if domain_entry is not None:
+			is_updated = domain_entry.updateLastLoginMonth()
 		namespace_manager.set_namespace(strOldNamespace)
 		return is_updated
+
 	except Exception as error:
 		namespace_manager.set_namespace(strOldNamespace)
 		raise error
+
 	return False
 
 # テナントエントリーを取得
-def getTenantEntry(tenant):
+def getGoogleAppsDomainEntry(google_apps_domain):
 	strOldNamespace = namespace_manager.get_namespace()
 	namespace_manager.set_namespace('')
 
-	tenant_entry = None
+	domain_entry = None
 	try:
 
-		q = TenantEntry.all(keys_only=True)
-		q.filter('tenant =', tenant.lower())
-		tenant_entry = TenantEntry.getByKey(q.get())
+		q = GoogleAppsDomainEntry.query()
+		q.filter(GoogleAppsDomainEntry.google_apps_domain == google_apps_domain)
+		domain_entry = q.get()
 
 		namespace_manager.set_namespace(strOldNamespace)
-		return tenant_entry
+		return domain_entry
+
 	except Exception as error:
 		namespace_manager.set_namespace(strOldNamespace)
 		raise error
 
 # フリーモードかどうかを取得
-def isFreeMode(tenant, is_with_cache=True):
-	tenant = tenant.lower()
+def isFreeMode(google_apps_domain, is_with_cache=True):
+	google_apps_domain = google_apps_domain.lower()
 	strOldNamespace = namespace_manager.get_namespace()
 	namespace_manager.set_namespace('')
 	try:
-		memcache_key = 'isfreemode?tenant=' + tenant.lower()
+		memcache_key = 'isfreemode?google_apps_domain=' + google_apps_domain.lower()
 
 		is_free_mode = None
 		if is_with_cache:
 			is_free_mode = memcache.get(memcache_key)
 
 		if is_free_mode is None:
-			entry = getTenantEntry(tenant)
+			entry = getGoogleAppsDomainEntry(google_apps_domain)
 			if entry is not None:
 				is_free_mode = entry.is_free_mode
 
@@ -902,9 +908,9 @@ def isFreeMode(tenant, is_with_cache=True):
 		raise error
 
 # 無効テナントかどうかを取得
-def isTenantDisabled(tenant):
+def isDomainDisabled(google_apps_domain):
 
-	row = TenantEntry.getInstance(tenant, cache_ok=True)
+	row = GoogleAppsDomainEntry.getInstance(google_apps_domain, cache_ok=True)
 	if row is None:
 		return True
 
@@ -937,19 +943,19 @@ def isTenantDisabled(tenant):
 	return False
 
 # 解約日が過ぎていないかをチェック
-def isExpireAvailableTerm(tenant_entry):
+def isExpireAvailableTerm(domain_entry):
 	# 解約日をチェックするように対応 2013/11/13
-	if tenant_entry.cancel_date is not None and tenant_entry.cancel_date != '':
-		now = UcfUtil.getNow()	# 標準時
-		cancel_date = UcfUtil.add_days(UcfUtil.getDateTime(tenant_entry.cancel_date), 1)	# 解約日は利用可とするため1日たしておく
+	if domain_entry.cancel_date is not None and domain_entry.cancel_date != '':
+		now = UcfUtil.getNow()		# 標準時
+		cancel_date = UcfUtil.add_days(UcfUtil.getDateTime(domain_entry.cancel_date), 1)		# 解約日は利用可とするため1日たしておく
 		return now >= cancel_date
 	return False
 
 # トライアル期間内かを判定
-def isInTrialTerm(tenant_entry):
-	if tenant_entry.charge_start_date is not None and tenant_entry.charge_start_date != '':
-		now = UcfUtil.getNow()	# 標準時
-		charge_start_date = UcfUtil.getDateTime(tenant_entry.charge_start_date)
+def isInTrialTerm(domain_entry):
+	if domain_entry.charge_start_date is not None and domain_entry.charge_start_date != '':
+		now = UcfUtil.getNow()		# 標準時
+		charge_start_date = UcfUtil.getDateTime(domain_entry.charge_start_date)
 		return now < charge_start_date
 	return False
 
@@ -1087,44 +1093,6 @@ def exchangeTimeZoneCode(timezone):
 	#	timezone = sateraito_inc.DEFAULT_TIMEZONE		#
 	return timezone
 
-def getDomainPart(email_address):
-	a_email_address = email_address.split('@')
-	if len(a_email_address) > 1:
-		return a_email_address[1]
-	else:
-		return ''
-
-def logoutIfUserDisabled(helper, viewer_email, user_entry=None):
-
-	if user_entry is None:
-		logging.info("logoutIfUserDisabled viewer_email=%s" % str(viewer_email))
-		user_entry = UserEntry.getInstance(viewer_email)
-
-	need_logout = False
-	if user_entry is None:
-		logging.info("logoutIfUserDisabled user_entry=%s" % str(user_entry))
-		need_logout = True
-	
-	elif user_entry.disable_user:
-		logging.info("logoutIfUserDisabled user_entry.disable_user=%s" % str(user_entry.disable_user))
-		need_logout = True
-
-	logging.info("logoutIfUserDisabled=%s" % str(need_logout))
-	
-	if need_logout:
-		# clear session value
-		helper.setSession('viewer_email', '')
-		helper.setSession('loggedin_timestamp', None)  # G Suiteのマルチログイン時にiframe内でOIDC認証ができなくなったので強制で少しだけ高速化オプションする対応＆SameSite対応 2019.10.28
-		helper.setSession('opensocial_viewer_id', '')
-		helper.setSession('is_oidc_loggedin', False)
-		helper.setSession('is_oidc_need_show_signin_link', False)
-
-		# clear openid connect session
-		helper.removeAppsCookie()
-
-		return True
-	
-	return False
 
 # SameSiteをU/Aで判別して自動付与する対応
 # SameSite対応…SameSite=NoneをつけるかどうかをU/Aで判断
@@ -1169,8 +1137,78 @@ def isSameSiteCookieSupportedUA(strAgent):
 	return is_supported
 
 
-API_TIMEOUT_SECONDS = 10
-API_TIMEOUT_SECONDS_DRIVE = (60 * 60 * 1)
+# Google Service
+
+def _get_directory_service(viewer_email, google_apps_domain, credentials=None, scopes=None):
+	# Directory API can be used by only Google Apps Admin user
+	impersonate_email = viewer_email
+
+	# get authorized http using impersonate_email
+	logging.debug('get_directory_service impersonate_email=' + str(impersonate_email))
+	#if credentials is not None:
+	#	http = httplib2.Http(memcache, timeout=API_TIMEOUT_SECONDS)
+	#	http = credentials.authorize(http)
+	#else:
+	if credentials is None:
+		credentials = get_authorized_http(impersonate_email, google_apps_domain, scopes)
+	return build('admin', 'directory_v1', credentials=credentials)
+
+# ログイン連携対応：GWSのDirectory API サービス作成
+def get_directory_service(viewer_email, google_apps_domain, num_retry=0, do_not_retry=False, credentials=None, scopes=None):
+	try:
+		directory_service = _get_directory_service(viewer_email, google_apps_domain, credentials=credentials, scopes=scopes)
+		return directory_service
+	except RefreshError as e:
+		logging.warning('class name:' + e.__class__.__name__ + ' message=' +str(e) + ' num_retry=' + str(num_retry))
+		raise e
+	except BaseException as e:
+		if do_not_retry:
+			raise e
+		logging.warning('class name:' + e.__class__.__name__ + ' message=' +str(e) + ' num_retry=' + str(num_retry))
+		if num_retry > 3:
+			raise e
+		else:
+			sleep_time = timeToSleep(num_retry)
+			logging.debug('sleeping ' + str(sleep_time))
+			time.sleep(sleep_time)
+			return get_directory_service(viewer_email, google_apps_domain, (num_retry + 1), scopes=scopes)
+
+def check_user_is_admin(google_apps_domain, viewer_email, num_retry=0, do_not_use_impersonate_mail=False,	credentials=None):
+	# user_dict = sateraito_db.GoogleAppsUserEntry.getDict(google_apps_domain, viewer_email)
+	# if user_dict is not None and 'is_apps_admin' in user_dict:
+	# 	return user_dict['is_apps_admin']
+
+	try:
+		app_service = get_directory_service(viewer_email, google_apps_domain, credentials=credentials, scopes=sateraito_inc.OAUTH2_SCOPES_FOR_CHECK_ADMIN)
+		user_entry = app_service.users().get(userKey=viewer_email).execute()
+		logging.info('user_entry:' + str(user_entry))
+		if user_entry["isAdmin"] == 'true' or user_entry["isAdmin"] == 'True' or user_entry["isAdmin"]:
+			return True
+		return False
+	# except AccessTokenRefreshError as e:  # g2対応
+	except RefreshError as e:
+		logging.warn('class name: ' + e.__class__.__name__ + 'message=' + str(e))
+		raise ImpersonateMailException()
+	except HttpError as e:
+		if '403' in str(e):
+			# Not Authorized ---> IMPERSONATE_MAIL IS NOT GOOGLE APPS ADMIN, but existing user
+			logging.error('class name:' + e.__class__.__name__ + 'message=' + str(e))
+			if do_not_use_impersonate_mail:
+				return False
+			else:
+				raise ImpersonateMailException()
+		else:
+			logging.error('class name:' + e.__class__.__name__ + 'message=' + str(e))
+			raise e
+	except Exception as instance:
+		logging.warn('error in check_user_is_admin:' + instance.__class__.__name__ + 'message=' + str(instance))
+		if num_retry > 3:
+			raise instance
+		else:
+			sleep_time = timeToSleep(num_retry)
+			logging.info('sleep_time ' + str(sleep_time))
+			time.sleep(sleep_time)
+			return check_user_is_admin(viewer_email, google_apps_domain, (num_retry + 1))
 
 def get_authorized_http(viewer_email, google_apps_domain, scope=sateraito_inc.OAUTH2_SCOPES, timeout_seconds=API_TIMEOUT_SECONDS, is_sub=False):
 	logging.info('get_authorized_http')
@@ -1271,7 +1309,7 @@ def getEmailMessage(google_apps_domain, email, message_id, is_draft=False):
     logging.info('=======getEmailMessage==========')
     # logging.info(message_id)
     # logging.info(email)
-	
+
     data = {
       'msg_id': message_id,
       'subject': '',
@@ -1279,7 +1317,7 @@ def getEmailMessage(google_apps_domain, email, message_id, is_draft=False):
       'from': '',
       'to': ''
     }
-	
+
     try:
       gmail_service = get_gmail_service(email, google_apps_domain)
       if gmail_service:

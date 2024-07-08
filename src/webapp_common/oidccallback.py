@@ -65,16 +65,16 @@ def getCredentials(state, code, with_admin_consent=False, num_retry=0):
 	# except DeadlineExceededError as e:
 	except requests.exceptions.Timeout as e:
 		logging.error('getCredentials: class name:' + e.__class__.__name__ + ' message=' +str(e) + ' num_retry=' + str(num_retry))
-		if num_retry > 10:
+		if num_retry > 0:
 			raise e
 		else:
 			return getCredentials(state, code, with_admin_consent,(num_retry + 1))
-	except Exception as ex:
-		logging.error('getCredentials: class name:' + ex.__class__.__name__ + ' message=' + str(ex) + ' num_retry=' + str(num_retry))
-		if num_retry > 10:
-			raise ex
-		else:
-			return getCredentials(state, code, with_admin_consent, (num_retry + 1))
+	# except Exception as ex:
+	# 	logging.error('getCredentials: class name:' + ex.__class__.__name__ + ' message=' + str(ex) + ' num_retry=' + str(num_retry))
+	# 	if num_retry > 10:
+	# 		raise ex
+	# 	else:
+	# 		return getCredentials(state, code, with_admin_consent, (num_retry + 1))
 
 
 class OIDCCallback(WebappHelper):
@@ -104,7 +104,7 @@ class OIDCCallback(WebappHelper):
 		with_regist_user_entry = False
 
 		hl = None
-		tenant_or_domain = None  # iOS13サードパーティーCookieブロック対策 2019.09.26
+		# tenant_or_domain = None  # iOS13サードパーティーCookieブロック対策 2019.09.26
 
 		states = state.split('-')
 		if len(states) >= 3 and states[1] != '':
@@ -129,9 +129,9 @@ class OIDCCallback(WebappHelper):
 					with_regist_user_entry = True
 				if k == 'hl':
 					hl = v
-				# iOS13サードパーティーCookieブロック対策 2019.09.26
-				if k == 't':
-					tenant_or_domain = v
+				# # iOS13サードパーティーCookieブロック対策 2019.09.26
+				# if k == 't':
+				# 	tenant_or_domain = v
 
 		# G Suite 版申込ページ対応…エラーページ対応 2017.06.05
 		error_page_url = ''
@@ -181,38 +181,38 @@ class OIDCCallback(WebappHelper):
 					self.redirect(str(error_page_url))
 					return
 
-				# iOS13サードパーティーCookieブロック対策 2019.09.26
-				if tenant_or_domain is not None and tenant_or_domain != '':
-					google_apps_domain_from_gadget_url = tenant_or_domain
-					token = UcfUtil.guid()
-					# app_id = ''
-					user_language = hl
-					popup = sateraito_func.getMySiteURL(tenant_or_domain, self.request.url) + '/' + google_apps_domain_from_gadget_url + '/openid/' + token + '/' + google_apps_domain_from_gadget_url + '/before_popup.html?hl=' + UcfUtil.urlEncode(hl)
-					values = {
-						'hl': hl,
-						'user_lang': user_language,
-						'extjs_locale_file': sateraito_func.getExtJsLocaleFileName(user_language),
-						'google_apps_domain': tenant_or_domain,
-						# 'app_id': app_id,
-						'my_site_url': sateraito_func.getMySiteURL(tenant_or_domain, self.request.url),
-						'my_site_url_for_static': sateraito_func.getMySiteURLForStaticContents(tenant_or_domain, self.request.url),
-						# 静的コンテンツキャッシュ障害対応
-						'version': sateraito_func.getScriptVersionQuery(),
-						'vscripturl': sateraito_func.getScriptVirtualUrl(),
-						'vscriptliburl': sateraito_func.getScriptLibVirtualUrl(),
-						'is_free_edition': sateraito_inc.IS_FREE_EDITION,
-						'debug_mode': sateraito_inc.debug_mode,
-						# 'hide_ad': hide_ad,
-						# 'is_oauth2_domain':not sateraito_func.isNeedExchangeOauth2Mode(tenant_or_domain),
-						'mode': '',
-						'popup': popup,
-					}
-
-					template = jinja_environment.get_template('authentication.html')
-					# start http body
-					# self.response.out.write(template.render(values))
-					# return
-					return template.render(values)
+				# # iOS13サードパーティーCookieブロック対策 2019.09.26
+				# if tenant_or_domain is not None and tenant_or_domain != '':
+				# 	google_apps_domain_from_gadget_url = tenant_or_domain
+				# 	token = UcfUtil.guid()
+				# 	# app_id = ''
+				# 	user_language = hl
+				# 	popup = sateraito_func.getMySiteURL(tenant_or_domain, self.request.url) + '/' + google_apps_domain_from_gadget_url + '/openid/' + token + '/' + google_apps_domain_from_gadget_url + '/before_popup.html?hl=' + UcfUtil.urlEncode(hl)
+				# 	values = {
+				# 		'hl': hl,
+				# 		'user_lang': user_language,
+				# 		'extjs_locale_file': sateraito_func.getExtJsLocaleFileName(user_language),
+				# 		'google_apps_domain': tenant_or_domain,
+				# 		# 'app_id': app_id,
+				# 		'my_site_url': sateraito_func.getMySiteURL(tenant_or_domain, self.request.url),
+				# 		'my_site_url_for_static': sateraito_func.getMySiteURLForStaticContents(tenant_or_domain, self.request.url),
+				# 		# 静的コンテンツキャッシュ障害対応
+				# 		'version': sateraito_func.getScriptVersionQuery(),
+				# 		'vscripturl': sateraito_func.getScriptVirtualUrl(),
+				# 		'vscriptliburl': sateraito_func.getScriptLibVirtualUrl(),
+				# 		'is_free_edition': sateraito_inc.IS_FREE_EDITION,
+				# 		'debug_mode': sateraito_inc.debug_mode,
+				# 		# 'hide_ad': hide_ad,
+				# 		# 'is_oauth2_domain':not sateraito_func.isNeedExchangeOauth2Mode(tenant_or_domain),
+				# 		'mode': '',
+				# 		'popup': popup,
+				# 	}
+				#
+				# 	template = jinja_environment.get_template('authentication.html')
+				# 	# start http body
+				# 	# self.response.out.write(template.render(values))
+				# 	# return
+				# 	return template.render(values)
 
 				# self.response.out.write('<html><head>')
 				# self.response.out.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />')
@@ -266,40 +266,40 @@ class OIDCCallback(WebappHelper):
 					self.response.set_status(403)
 			else:
 
-				# iOS13サードパーティーCookieブロック対策 2019.09.26
-				if tenant_or_domain is not None and tenant_or_domain != '':
-					google_apps_domain_from_gadget_url = tenant_or_domain
-					token = UcfUtil.guid()
-					# app_id = ''
-					user_language = hl
-					popup = sateraito_func.getMySiteURL(tenant_or_domain, self.request.url) + '/' + google_apps_domain_from_gadget_url + '/openid/' + token + '/' + google_apps_domain_from_gadget_url + '/before_popup.html?hl=' + UcfUtil.urlEncode(
-						hl)
-					values = {
-						'hl': hl,
-						'user_lang': user_language,
-						'extjs_locale_file': sateraito_func.getExtJsLocaleFileName(user_language),
-						'google_apps_domain': tenant_or_domain,
-						# 'app_id': app_id,
-						'my_site_url': sateraito_func.getMySiteURL(tenant_or_domain, self.request.url),
-						'my_site_url_for_static': sateraito_func.getMySiteURLForStaticContents(tenant_or_domain, self.request.url),
-						# 静的コンテンツキャッシュ障害対応
-						'version': sateraito_func.getScriptVersionQuery(),
-						'vscripturl': sateraito_func.getScriptVirtualUrl(),
-						'vscriptliburl': sateraito_func.getScriptLibVirtualUrl(),
-						'is_free_edition': sateraito_inc.IS_FREE_EDITION,
-						'debug_mode': sateraito_inc.debug_mode,
-						# 'hide_ad': hide_ad,
-						# 'is_oauth2_domain':not sateraito_func.isNeedExchangeOauth2Mode(tenant_or_domain),
-						'mode': '',
-						'popup': popup,
-						'url_to_go_after_oidc_login': redirect_url,  # SameSite対応…標準高速化対応のついでに自動リロード対応を追加 2019.12.30
-					}
-
-					template = jinja_environment.get_template('authentication.html')
-					# start http body
-					# self.response.out.write(template.render(values))
-					# return
-					return template.render(values)
+				# # iOS13サードパーティーCookieブロック対策 2019.09.26
+				# if tenant_or_domain is not None and tenant_or_domain != '':
+				# 	google_apps_domain_from_gadget_url = tenant_or_domain
+				# 	token = UcfUtil.guid()
+				# 	# app_id = ''
+				# 	user_language = hl
+				# 	popup = sateraito_func.getMySiteURL(tenant_or_domain, self.request.url) + '/' + google_apps_domain_from_gadget_url + '/openid/' + token + '/' + google_apps_domain_from_gadget_url + '/before_popup.html?hl=' + UcfUtil.urlEncode(
+				# 		hl)
+				# 	values = {
+				# 		'hl': hl,
+				# 		'user_lang': user_language,
+				# 		'extjs_locale_file': sateraito_func.getExtJsLocaleFileName(user_language),
+				# 		'google_apps_domain': tenant_or_domain,
+				# 		# 'app_id': app_id,
+				# 		'my_site_url': sateraito_func.getMySiteURL(tenant_or_domain, self.request.url),
+				# 		'my_site_url_for_static': sateraito_func.getMySiteURLForStaticContents(tenant_or_domain, self.request.url),
+				# 		# 静的コンテンツキャッシュ障害対応
+				# 		'version': sateraito_func.getScriptVersionQuery(),
+				# 		'vscripturl': sateraito_func.getScriptVirtualUrl(),
+				# 		'vscriptliburl': sateraito_func.getScriptLibVirtualUrl(),
+				# 		'is_free_edition': sateraito_inc.IS_FREE_EDITION,
+				# 		'debug_mode': sateraito_inc.debug_mode,
+				# 		# 'hide_ad': hide_ad,
+				# 		# 'is_oauth2_domain':not sateraito_func.isNeedExchangeOauth2Mode(tenant_or_domain),
+				# 		'mode': '',
+				# 		'popup': popup,
+				# 		'url_to_go_after_oidc_login': redirect_url,  # SameSite対応…標準高速化対応のついでに自動リロード対応を追加 2019.12.30
+				# 	}
+				#
+				# 	template = jinja_environment.get_template('authentication.html')
+				# 	# start http body
+				# 	# self.response.out.write(template.render(values))
+				# 	# return
+				# 	return template.render(values)
 
 				# ページ内リンクを考慮するためUcfUtilを使用
 				# if '?' in redirect_url:
@@ -349,60 +349,84 @@ class OIDCCallback(WebappHelper):
 		if (len(lstItems) == 3):
 			id_token = json.loads(itsdangerous.encoding.base64_decode(lstItems[1]))
 
+		email_verified = str(id_token['email_verified'])
 		viewer_email = str(id_token['email'])
 		opensocial_viewer_id = id_token.get('sub', '')
+		logging.info('id_token=' + str(id_token))
 		logging.info('viewer_email=' + str(viewer_email))
 		logging.info('opensocial_viewer_id=' + str(opensocial_viewer_id))
 
-		# G Suite 版申込ページ対応…管理者判定＆UserEntry作成 2017.06.05
-		# 管理者判定
-		if with_admin_consent:
-			google_apps_domain = id_token.get('hd', '')
-			logging.info('google_apps_domain=' + google_apps_domain)
-			is_admin = False
-			try:
-				is_admin = sateraito_func.check_user_is_admin(google_apps_domain, viewer_email, do_not_use_impersonate_mail=True, credentials=credentials)
-			except sateraito_func.ImpersonateMailException as e:
-				logging.warning('class name:' + e.__class__.__name__ + ' message=' + str(e))
-			if not is_admin:
-				if with_error_page:
-					my_lang = sateraito_func.MyLang(hl)
-					# G Suite 版申込ページ対応…エラーページ対応 2017.06.05
-					error_msg = my_lang.getMsg('FAILED_AUTH_BY_PRIVILEGE_ADMIN')
-					if error_page_url != '':
-						self.session['error_msg'] = error_msg
-						self.redirect(str(error_page_url))
-						return
-					# self.response.out.write('<html><head>')
-					# self.response.out.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />')
-					# self.response.out.write('</head><body>')
-					# self.response.out.write(error_msg)
-					# self.response.out.write('</body></html>')
-					return '<html><head>' \
-						+ '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' \
-						+ '</head><body>' \
-						+ error_msg \
-						+ '</body></html>'
-				else:
-					self.response.set_status(403)
-				return
-			self.session['is_admin'] = is_admin
-
-			# ユーザー情報登録（管理者判定ありき？）
-			if with_regist_user_entry:
-				sateraito_func.setNamespace(google_apps_domain, '')
-				checker = sateraito_func.RequestChecker()
-				row_u = checker.putNewUserEntry(
-					viewer_email,
-					google_apps_domain,
-					sateraito_func.getDomainPart(viewer_email),
-					opensocial_viewer_id,
-					sateraito_func.OPENSOCIAL_CONTAINER_GOOGLE_SITE,
-					'', is_admin)
-				sateraito_func.setNamespace('', '')
+		# # G Suite 版申込ページ対応…管理者判定＆UserEntry作成 2017.06.05
+		# # 管理者判定
+		# if with_admin_consent:
+		# 	google_apps_domain = id_token.get('hd', '')
+		# 	logging.info('google_apps_domain=' + google_apps_domain)
+		# 	is_admin = False
+		# 	try:
+		# 		is_admin = sateraito_func.check_user_is_admin(google_apps_domain, viewer_email, do_not_use_impersonate_mail=True, credentials=credentials)
+		# 	except sateraito_func.ImpersonateMailException as e:
+		# 		logging.warning('class name:' + e.__class__.__name__ + ' message=' + str(e))
+		# 	if not is_admin:
+		# 		if with_error_page:
+		# 			my_lang = sateraito_func.MyLang(hl)
+		# 			# G Suite 版申込ページ対応…エラーページ対応 2017.06.05
+		# 			error_msg = my_lang.getMsg('FAILED_AUTH_BY_PRIVILEGE_ADMIN')
+		# 			if error_page_url != '':
+		# 				self.session['error_msg'] = error_msg
+		# 				self.redirect(str(error_page_url))
+		# 				return
+		# 			# self.response.out.write('<html><head>')
+		# 			# self.response.out.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />')
+		# 			# self.response.out.write('</head><body>')
+		# 			# self.response.out.write(error_msg)
+		# 			# self.response.out.write('</body></html>')
+		# 			return '<html><head>' \
+		# 				+ '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' \
+		# 				+ '</head><body>' \
+		# 				+ error_msg \
+		# 				+ '</body></html>'
+		# 		else:
+		# 			self.response.set_status(403)
+		# 		return
+		# 	self.session['is_admin'] = is_admin
+		#
+		# 	# ユーザー情報登録（管理者判定ありき？）
+		# 	if with_regist_user_entry:
+		# 		sateraito_func.setNamespace(google_apps_domain, '')
+		# 		checker = sateraito_func.RequestChecker()
+		# 		row_u = checker.putNewUserEntry(
+		# 			viewer_email,
+		# 			google_apps_domain,
+		# 			sateraito_func.getDomainPart(viewer_email),
+		# 			opensocial_viewer_id,
+		# 			sateraito_func.OPENSOCIAL_CONTAINER_GOOGLE_SITE,
+		# 			'', is_admin)
+		# 		sateraito_func.setNamespace('', '')
 
 		# turn on login flag in session
 		# self.session['viewer_email'] = str(viewer_email).lower()
+
+		google_apps_domain = id_token.get('hd', '')
+		logging.info('google_apps_domain=' + google_apps_domain)
+		is_admin = False
+		try:
+			is_admin = sateraito_func.check_user_is_admin(google_apps_domain, viewer_email, do_not_use_impersonate_mail=True)
+		except sateraito_func.ImpersonateMailException as e:
+			logging.warning('class name:' + e.__class__.__name__ + ' message=' + str(e))
+
+		tenant_entry = GoogleAppsDomainEntry.getInstance(google_apps_domain)
+		if is_admin and tenant_entry is None:
+			tenant_entry = sateraito_func.insertGoogleAppsDomainEntry(google_apps_domain, google_apps_domain, is_free_mode=True)
+
+		success, msg_err = sateraito_func.registerUserEntry(viewer_email, google_apps_domain, is_admin, False, email_verified=email_verified)
+		if not success:
+			vhtml = '<html><head>'
+			vhtml += '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
+			vhtml += '</head><body>'
+			vhtml += msg_err
+			vhtml += '</body></html>'
+			return make_response(vhtml, 200)
+
 		self.session['viewer_email'] = str(viewer_email)
 		# GAEGEN2対応
 		# self.session['loggedin_timestamp'] = datetime.datetime.now()				# G Suiteのマルチログイン時にiframe内でOIDC認証ができなくなったので強制で少しだけ高速化オプションする対応＆SameSite対応 2019.10.28

@@ -2,36 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="be2e3ed8-8506-4605-a939-9f8ed2d8fecb" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/ext-procedure-sidepanel.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/watcherTasks.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/scripts/common.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/scripts/sign-in.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/constant.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/sidepanel.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/sidepanel.css.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/sidepanel.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/style.css.map" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/extension/styles/style.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/tenant_login.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/base_helper.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/chatgpt_func_v2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/chatgpt_kien.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/oidccallback.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/popup.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/webapp_common/tenant_board_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/_locales/en/messages.json" beforeDir="false" afterPath="$PROJECT_DIR$/extension/_locales/en/messages.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/_locales/ja/messages.json" beforeDir="false" afterPath="$PROJECT_DIR$/extension/_locales/ja/messages.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/extension/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/scripts/sateraito_lang.js" beforeDir="false" afterPath="$PROJECT_DIR$/extension/scripts/sateraito_lang.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/service-worker.js" beforeDir="false" afterPath="$PROJECT_DIR$/extension/service-worker.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/extension/styles/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/extension/styles/style.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sateraito_inc.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/sateraito_inc.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,6 +44,8 @@
       <option name="presentableId" value="Default" />
       <updated>1720149405086</updated>
       <workItem from="1720149407904" duration="3157000" />
+      <workItem from="1720402966434" duration="414000" />
+      <workItem from="1720403451029" duration="959000" />
     </task>
     <servers />
   </component>
@@ -87,6 +62,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />

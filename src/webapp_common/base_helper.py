@@ -1,12 +1,12 @@
 # coding: utf-8
 
 # GAEGEN2対応:Loggerをカスタマイズ
-#import logging
+# import logging
 import sateraito_logger as logging
 # GAEGEN2対応:webapp2ライブラリ廃止→Flask移行
-#import webapp2
-from flask import Flask, Response, render_template, request, make_response, session, redirect, jsonify, after_this_request, g, url_for
-import json,urllib,time,datetime
+# import webapp2
+import json, urllib, time, datetime
+import dateutil.parser  # GAE Gen2対応
 
 from oauthlib.oauth2 import WebApplicationClient
 from google.appengine.api import namespace_manager
@@ -351,7 +351,7 @@ class WebappHelper(FrontHelper):
 		# self.setCookie(urllib.quote(state + '-ep'), str(error_page_url), expires=expires)
 
 		dictParam = dict(
-			scope=sateraito_inc.OAUTH2_SCOPES_OIDC,  # G Suite 版申込ページ対応 2017.06.05
+			scope=sateraito_inc.OAUTH2_SCOPES,  # G Suite 版申込ページ対応 2017.06.05
 			redirect_uri=sateraito_inc.my_site_url + '/oidccallback',
 			state=state,
 			openid_realm=sateraito_inc.my_site_url,
@@ -382,14 +382,14 @@ class WebappHelper(FrontHelper):
 		# redirect(auth_uri)
 		return auth_uri
 
-	def oidAutoLogin(self, tenant, is_multi_domain=False, true_redirecting=False, kozukasan_method=False,
+	def oidAutoLogin(self, is_multi_domain=False, true_redirecting=False, kozukasan_method=False,
 									kozukasan_redirect_to=None, skip_domain_compatibility=False, with_error_page=False,
 									with_none_prompt=False, with_select_account_prompt=False, is_force_auth=False, hl=None,
 									add_querys=None):
 		logging.debug('===========oidAutoLogin============')
 
 
-		return self._OIDCAutoLogin(tenant, skip_domain_compatibility=skip_domain_compatibility,
+		return self._OIDCAutoLogin(skip_domain_compatibility=skip_domain_compatibility,
 																with_error_page=with_error_page, with_none_prompt=with_none_prompt,
 																with_select_account_prompt=with_select_account_prompt, is_force_auth=is_force_auth,
 																hl=hl, add_querys=add_querys)
@@ -466,10 +466,7 @@ class WebappHelper(FrontHelper):
 	# OpenIDConnect用
 	# ※ ガジェット外での新規申請機能対応：add_querys引数追加 2016.03.04
 	# G Suite 版申込ページ対応…引数いくつか追加 2017.06.05
-	# def _OIDCAutoLogin(self, google_apps_domain, skip_domain_compatibility=False, with_error_page=False, with_none_prompt=False, is_force_auth=False, hl=None, add_querys=None):
-	# モバイル版でログアウト直後のログイン時にG Suite側のアカウント選択画面を出すことで自動再ログインを防ぐ 2020.02.21
-	# def _OIDCAutoLogin(self, google_apps_domain, skip_domain_compatibility=False, with_error_page=False, error_page_url='', with_none_prompt=False, with_admin_consent=False, with_regist_user_entry=False, is_force_auth=False, hl=None, url_to_go_after_oidc_login=None, add_querys=None):
-	def _OIDCAutoLogin(self, google_apps_domain, skip_domain_compatibility=False, with_error_page=False,
+	def _OIDCAutoLogin(self, skip_domain_compatibility=False, with_error_page=False,
 										error_page_url='', with_none_prompt=False, with_select_account_prompt=False,
 										with_admin_consent=False, with_regist_user_entry=False, is_force_auth=False, hl=None,
 										url_to_go_after_oidc_login=None, add_querys=None, prompt_type=None):
@@ -565,8 +562,8 @@ class WebappHelper(FrontHelper):
 			if with_regist_user_entry:
 				info += '&wrue=1'
 
-			# iOS13サードパーティーCookieブロック対策…テナント、ドメインを渡す 2019.09.26
-			info += '&t=' + google_apps_domain
+			# # iOS13サードパーティーCookieブロック対策…テナント、ドメインを渡す 2019.09.26
+			# info += '&t=' + google_apps_domain
 
 			info = info.lstrip('&')
 			state = 'state-' + ((UcfUtil.base64Encode(info) + '-') if info != '' else '') + sateraito_func.dateString() + sateraito_func.randomString()
@@ -670,20 +667,19 @@ class WebappHelper(FrontHelper):
 				self.redirect(auth_uri)
 				return False, ''
 
-		# check domain
-		viewer_email_domain = sateraito_func.getDomainPart(viewer_email)
-		if viewer_email_domain != google_apps_domain:
-			if not skip_domain_compatibility:
-				# if not sateraito_func.isCompatibleDomain(google_apps_domain, viewer_email_domain):
-				if not sateraito_func.isCompatibleDomain(google_apps_domain, viewer_email_domain):
-					# logging.error('unmatched google apps domain and login user')
-					logging.warning('unmatched google apps domain and login user')
-					# self.response.out.write('wrong request:login user is ' + str(self.viewer_email) + '.')
-					self.response.set_status(403)
-					return False, 'wrong request'
+		# # check domain
+		# viewer_email_domain = sateraito_func.getDomainPart(viewer_email)
+		# if viewer_email_domain != google_apps_domain:
+		# 	if not skip_domain_compatibility:
+		# 		# if not sateraito_func.isCompatibleDomain(google_apps_domain, viewer_email_domain):
+		# 		if not sateraito_func.isCompatibleDomain(google_apps_domain, viewer_email_domain):
+		# 			# logging.error('unmatched google apps domain and login user')
+		# 			logging.warning('unmatched google apps domain and login user')
+		# 			# self.response.out.write('wrong request:login user is ' + str(self.viewer_email) + '.')
+		# 			self.response.set_status(403)
+		# 			return False, 'wrong request'
 
 		self.viewer_email = str(viewer_email).lower()
-		#		self.viewer_user_id = user.user_id()
 		self.viewer_id = str(opensocial_viewer_id)
 		logging.info('self.viewer_email=' + self.viewer_email)
 		logging.info('auth result=True')

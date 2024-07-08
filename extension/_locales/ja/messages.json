@@ -7,5 +7,30 @@
   },
   "extension_action_default_title": {
     "message": "Open side panel"
+  },
+    
+  "txt_logout": {
+    "message": "ログアウト"
+  },
+  "txt_login": {
+    "message": "ようこそ"
+  },
+  "txt_description_login": {
+    "message": "サテライトAI・サイドパネルAIとは、Chromeの拡張機能でGMail画面でメール本文の作成・返信・要約・問題発見・ミーティングの時間調整などAIで簡単に自動生成することができます。"
+  },
+  "txt_login_width_google": {
+    "message": "Googleで続ける"
+  },
+  "txt_privacy_policy_terms_of_use": {
+    "message": "あなたのデータは決して共有されません。迷惑メールはありません。<br>続行することで <a target='_blank' href='https://www.sateraito.jp/privacy.html'>プライバシーポリシー</a> および<a target='_blank' href='https://docs.google.com/document/d/1nmN-G2t9H6mn4XIhpD4UuTaLOg7ao01iJt_K68X-v70/view'>利用規約</a>に同意することになります"
+  },
+  "msg_welcome_back_after_auto_login": {
+    "message": "Welcome back"
+  },
+  "msg_login_success": {
+    "message": "Login successful"
+  },
+  "msg_login_failed": {
+    "message": "Login failed"
   }
 }

@@ -24,7 +24,7 @@ class BeforePopup(WebappHelper):
 
 	def getRequestAuthLogin(self, tenant, state):
 		dictParam = dict(
-			scope=sateraito_inc.OAUTH2_SCOPES_OIDC,  # sateraito_inc.OAUTH2_SCOPES_OIDC,  # G Suite 版申込ページ対応 2017.06.05
+			scope=sateraito_inc.OAUTH2_SCOPES,  # sateraito_inc.OAUTH2_SCOPES_OIDC,  # G Suite 版申込ページ対応 2017.06.05
 			redirect_uri=sateraito_inc.my_site_url + '/oidccallback',
 			state=state,
 			openid_realm=sateraito_inc.my_site_url,

@@ -7,7 +7,7 @@ appengine-python-standard==1.1.1
 python-dateutil==2.8.2
 werkzeug==2.2.3
 six==1.16.0
-#IPy==1.01								# カスタマイズして使用・・・「222.92.143.86/24」などがInvalid扱いになってしまうので
+#IPy==1.01
 pycryptodome==3.17
 pkcs7==0.1.2
 google-cloud-logging==3.5.0
@@ -27,8 +27,8 @@ google-cloud-logging==3.5.0
 #soupsieve==1.9.3
 #firebase-admin
 #google-cloud-firestore
-#flask_session==0.4.0		# カスタマイズして使用
-#flask-gae-sessions				# カスタマイズして使用
+#flask_session==0.4.0
+#flask-gae-sessions
 google-api-python-client==2.80.0
 apiclient==1.0.4
 gspread==5.7.2
@@ -48,7 +48,6 @@ spacy==3.5.2
 fake-useragent==1.1.3
 parse==1.19.0
 w3lib==2.1.1
-# メモリ使用量が大きいライブラリ.現状未使用なのでいったんコメントアウト
 #python-docx==0.8.11
 #python-dotenv==1.0.0
 #python-pptx==0.6.21
@@ -62,5 +61,5 @@ opensearch-py>=2.2.0
 urllib3
 ipaddress
 bcrypt==4.0.1
-gunicorn==20.1		# GAEGEN2対応：メモリ使用量チューニング
-psutil==5.9.5				# GAEGEN2対応：メモリ使用量チューニング
+gunicorn==20.1
+psutil==5.9.5
