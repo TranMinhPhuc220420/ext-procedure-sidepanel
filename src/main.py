@@ -89,15 +89,18 @@ tenant_login.add_url_rules(app)
 from webapp_common import oidccallback
 oidccallback.add_url_rules(app)
 
-@app.route('/gmail_test/<email>/<msg_id>', methods=['GET', 'POST'])
-def unit_gmail_test(email, msg_id):
+from webapp_common import router_app
+router_app.add_url_rules(app)
 
-	logging.info('unit_gmail_test.')
-	data = sateraito_func.getEmailMessage(sateraito_func.getDomainPart(email), email, msg_id, is_draft=True)
-
-	logging.info(str(data))
-	
-	return Response(str(data), status=200)
+# @app.route('/gmail_test/<email>/<msg_id>', methods=['GET', 'POST'])
+# def unit_gmail_test(email, msg_id):
+#
+# 	logging.info('unit_gmail_test.')
+# 	data = sateraito_func.getEmailMessage(sateraito_func.getDomainPart(email), email, msg_id, is_draft=True)
+#
+# 	logging.info(str(data))
+#
+# 	return Response(str(data), status=200)
 
 # GAEGEN2対応：View関数方式でページを定義（本来はflask.views.MethodViewクラス方式を採用だが簡単な処理はView関数でもOK）
 @app.route('/_ah/warmup', methods=['GET', 'POST'])

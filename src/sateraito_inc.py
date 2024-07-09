@@ -186,7 +186,10 @@ FIREBASE_CONFIG = {
 URLFETCH_TIMEOUT_SECOND = 45
 
 OAUTH2_SCOPES = [
-  'https://mail.google.com',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+]
+ADMIN_CONSENT_OAUTH2_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/admin.directory.user.readonly',

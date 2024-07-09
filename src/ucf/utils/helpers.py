@@ -545,14 +545,14 @@ class Helper(MethodView):
 	def render(self, template_name, design_type, vals, content_type=None):
 
 		# 文字コード指定：これをやらないとmetaタグだけでは文字コードをブラウザが認識してくれないため。
-		#self.response.headers['Content-Type'] = 'text/html; charset=' + UcfConfig.ENCODING + ';'
-		#encodeとcharsetのマッピング対応 2009.5.20 Osamu Kurihara
-		if UcfConfig.ENCODING=='cp932':
-			 charset_string='Shift_JIS'
-			#charset_string = UcfConfig.FILE_CHARSET
-		#マッピング定義がないものはUcfConfig.ENCODING
+		# self.response.headers['Content-Type'] = 'text/html; charset=' + UcfConfig.ENCODING + ';'
+		# encodeとcharsetのマッピング対応 2009.5.20 Osamu Kurihara
+		if UcfConfig.ENCODING == 'cp932':
+			charset_string = 'Shift_JIS'
+		# charset_string = UcfConfig.FILE_CHARSET
+		# マッピング定義がないものはUcfConfig.ENCODING
 		else:
-			charset_string=UcfConfig.ENCODING
+			charset_string = UcfConfig.ENCODING
 
 		if content_type is None or content_type == '':
 			content_type = 'text/html'

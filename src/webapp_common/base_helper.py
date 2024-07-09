@@ -30,7 +30,6 @@ class WebappHelper(FrontHelper):
 	# GAEGEN2対応
 	viewer_email = ''
 	viewer_id = ''
-	is_workflow_admin = False
 
 	_dept = None
 	_is_dept_selected = False
@@ -47,9 +46,8 @@ class WebappHelper(FrontHelper):
 	def init(self):
 		u''' 抽象メソッドイメージ '''
 		if sateraito_inc.developer_mode:
-			self.viewer_email = 'phuc@vnd.sateraito.co.jp'
-			self.viewer_id = '110825711458265280952'
-			self.is_workflow_admin = (self.viewer_email in sateraito_inc.LIST_USER_IS_ADMIN)
+			self.viewer_email = 'admin@vn2.sateraito.co.jp'
+			self.viewer_id = '100663400214546478628'
 		
 	@convert_result_none_to_empty_str
 	def get(self, *args, **keywords):
@@ -394,26 +392,34 @@ class WebappHelper(FrontHelper):
 																with_select_account_prompt=with_select_account_prompt, is_force_auth=is_force_auth,
 																hl=hl, add_querys=add_querys)
 
-	# # ログインチェック処理
-	# def checkLogin(self, tenant, hl=sateraito_inc.DEFAULT_LANGUAGE):
+	# ログインチェック処理
+	def checkLogin(self):
 
-	# 	logging.debug('_OidBasePage.checkLogin...')
-	# 	# tenant param check
-	# 	# if str(tenant).find('.') == -1:
-	# 	# 	# if tenant contains no '.', it is wrong
-	# 	# 	logging.info('wrong domain name:' + str(tenant))
-	# 	# 	return self.responseError403('wrong domain name:' + str(tenant))
+		logging.debug('_OidBasePage.checkLogin...')
+		# tenant param check
+		# if str(tenant).find('.') == -1:
+		# 	# if tenant contains no '.', it is wrong
+		# 	logging.info('wrong domain name:' + str(tenant))
+		# 	return self.responseError403('wrong domain name:' + str(tenant))
 
-	# 	# if domain_dict.get('no_auto_logout', False):
-	# 	# 	is_force_auth = False
-	# 	# else:
-	# 	# 	is_force_auth = self.request.get('oidc') != 'cb'
-	# 	# is_force_auth = self.request.get('oidc') != 'cb'
+		# if domain_dict.get('no_auto_logout', False):
+		# 	is_force_auth = False
+		# else:
+		# 	is_force_auth = self.request.get('oidc') != 'cb'
+		# is_force_auth = self.request.get('oidc') != 'cb'
 
-	# 	if sateraito_inc.developer_mode:
-	# 		return self.returnValue(True)
+		if sateraito_inc.developer_mode:
+			self.viewer_email = 'admin@vn2.sateraito.co.jp'
+			self.viewer_id = '100663400214546478628'
+			return True
 
-	# 	return self.oidAutoLogin(tenant, skip_domain_compatibility=True, with_error_page=True, with_none_prompt=True, is_force_auth=False, hl=hl)
+		# check session login
+		self.viewer_email = self.session.get('viewer_email')
+		logging.info('viewer_email=' + str(self.viewer_email))
+		self.viewer_id = self.session.get('opensocial_viewer_id')
+		logging.info('opensocial_viewer_id=' + str(self.viewer_id))
+
+		return (self.viewer_email is not None) and (str(self.viewer_email).strip() != '')
 
 	def checkOidRequest(self, tenant, is_without_check_csrf_token=False,
 	                    is_without_error_response_status=False, domain_dict=None):
@@ -458,7 +464,6 @@ class WebappHelper(FrontHelper):
 				# 	# self.response.set_status(403)
 				# 	return False
 		self.viewer_email = viewer_email.lower()
-		self.is_workflow_admin = (self.viewer_email in sateraito_inc.LIST_USER_IS_ADMIN)
 		self.viewer_user_id = user.user_id()
 		return True
 
@@ -597,10 +602,10 @@ class WebappHelper(FrontHelper):
 			# G Suite 版申込ページ対応…管理者チェック時はAdminSDKを含むスコープを指定 2017.06.05
 			# Google+API、Scope廃止対応 2019.02.01
 			# scope = ['https://www.googleapis.com/auth/plus.me', 'https://www.googleapis.com/auth/plus.profile.emails.read']
-			scope = ['openid', 'email']
+			scope = sateraito_inc.OAUTH2_SCOPES
 			if with_admin_consent:
 				# scope.extend(['https://www.googleapis.com/auth/admin.directory.user.readonly', 'https://www.googleapis.com/auth/admin.directory.group.readonly'])
-				scope = sateraito_inc.OAUTH2_SCOPES
+				scope = sateraito_inc.ADMIN_CONSENT_OAUTH2_SCOPES
 			# GAE Gen2対応
 			# flow = OAuth2WebServerFlow(
 			# 						client_id=sateraito_inc.WEBAPP_CLIENT_ID,

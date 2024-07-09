@@ -772,7 +772,7 @@ def insertGoogleAppsDomainEntry(google_apps_domain, target_google_apps_domain, i
 	return new_domain_entry
 
 # ユーザエントリの登録、更新
-def registerUserEntry(user_email, google_apps_domain, is_admin, is_disable_user, sign_with='', email_verified=False):
+def registerUserEntry(user_email, user_info, google_apps_domain, is_admin, is_disable_user, sign_with='', email_verified=False):
 	str_old_namespace = namespace_manager.get_namespace()
 	namespace_manager.set_namespace(google_apps_domain)
 
@@ -792,15 +792,44 @@ def registerUserEntry(user_email, google_apps_domain, is_admin, is_disable_user,
 				new_user_entry.is_admin = True
 			else:
 				new_user_entry.is_admin = False
+
+			new_user_entry.name = user_info.get('name')
+			new_user_entry.family_name = user_info.get('family_name')
+			new_user_entry.given_name = user_info.get('given_name')
+			new_user_entry.avatar = user_info.get('avatar')
+			new_user_entry.locale = user_info.get('locale')
+
 			new_user_entry.put()
 		else:
-			# update user entry on Datastore
-			if is_admin:
-				user_entry.is_admin = True
-			else:
-				user_entry.is_admin = False
+			need_put = False
 
-			user_entry.put()
+			# update user entry on Datastore
+			if is_admin != user_entry.is_admin:
+				user_entry.is_admin = is_admin
+				need_put = True
+			name = user_info.get('name', '')
+			if user_entry.name != name:
+				user_entry.name = name
+				need_put = True
+			family_name = user_info.get('family_name', '')
+			if user_entry.family_name != family_name:
+				user_entry.family_name = family_name
+				need_put = True
+			given_name = user_info.get('given_name', '')
+			if user_entry.given_name != given_name:
+				user_entry.given_name = given_name
+				need_put = True
+			avatar = user_info.get('avatar', '')
+			if user_entry.avatar != avatar:
+				user_entry.avatar = avatar
+				need_put = True
+			locale = user_info.get('locale', sateraito_inc.DEFAULT_LANGUAGE)
+			if user_entry.locale != locale:
+				user_entry.locale = locale
+				need_put = True
+
+			if need_put:
+				user_entry.put()
 
 		namespace_manager.set_namespace(str_old_namespace)
 		return True, ''

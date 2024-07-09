@@ -1,7 +1,7 @@
 /** start - VALUE CONSTANT AND GLOBAL */
 const DEBUG_MODE = true;
 
-const SERVER_URL = 'https://sateraito-gpt-api.appspot.com';
+const SERVER_URL = 'https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com';
 const PREFIX_KEY = 'Sateraito-WzNyEGIZoaF7Z1R8';
 /** end - VALUE CONSTANT AND GLOBAL */
 
@@ -13,7 +13,7 @@ const PREFIX_KEY = 'Sateraito-WzNyEGIZoaF7Z1R8';
 
 /**
  * My Utils
- * 
+ *
  */
 const MyUtils = {
   flagHasSetCloseSidePanel: false,
@@ -31,8 +31,8 @@ const MyUtils = {
 
   /**
    * encodeBase64
-   * 
-   * @param {string} value 
+   *
+   * @param {string} value
    * @returns {string}
    */
   encodeBase64: (value) => {
@@ -43,8 +43,8 @@ const MyUtils = {
 
   /**
    * decodeBase64
-   * 
-   * @param {string} value 
+   *
+   * @param {string} value
    * @returns {string}
    */
   decodeBase64: (value) => {
@@ -60,7 +60,7 @@ const MyUtils = {
 
   /**
    * generateToken
-   * 
+   *
    * @returns {string}
    */
   generateToken: () => {
@@ -70,8 +70,8 @@ const MyUtils = {
 
   /**
    * generateTokenByTenant
-   * 
-   * @param {string} tenant 
+   *
+   * @param {string} tenant
    * @returns {string}
    */
   generateTokenByTenant: (tenant) => {
@@ -81,7 +81,7 @@ const MyUtils = {
 
   /**
    * getDateUTCString
-   * 
+   *
    * @returns {string}
    */
   getDateUTCString: () => {
@@ -96,10 +96,10 @@ const MyUtils = {
 
   /**
    * Render text to element style chat GPT
-   * 
-   * @param {element} elToRender 
-   * @param {string} stringRender 
-   * @param {Function} callback 
+   *
+   * @param {element} elToRender
+   * @param {string} stringRender
+   * @param {Function} callback
    */
   renderTextStyleChatGPT: (elToRender, stringRender, callback) => {
     let indexText = 0;
@@ -118,7 +118,7 @@ const MyUtils = {
 
   /**
    * Get radom string
-   * 
+   *
    * @returns {string}
    */
   randomId: () => {
@@ -127,7 +127,7 @@ const MyUtils = {
 
   /**
    * Get new id
-   * 
+   *
    * @returns {string}
    */
   getNewId: () => {
@@ -144,7 +144,7 @@ const MyUtils = {
 
   /**
    * setOpenSidePanel
-   * 
+   *
    */
   setOpenSidePanel: () => {
     const self = MyUtils;
@@ -158,7 +158,7 @@ const MyUtils = {
 
 /**
  * _Storage Manager
- * 
+ *
  */
 const _StorageManager = {
   // For Auth
@@ -171,7 +171,7 @@ const _StorageManager = {
       expiry: expiryTime.toISOString()
     };
 
-    chrome.storage.local.set({ user_access_token: tokenData }, () => {
+    chrome.storage.local.set({user_access_token: tokenData}, () => {
       if (callback) {
         callback();
       }
@@ -186,90 +186,145 @@ const _StorageManager = {
     chrome.storage.local.remove('user_access_token');
   },
 
-  setUserInfoCache: (userInfo, callback) => {
-    chrome.storage.local.set({ user_info: userInfo }, () => {
+  setUserLogin: (user, callback) => {
+    chrome.storage.local.set({user_login: user}, () => {
       if (callback) {
         callback();
       }
     });
   },
-  getUserInfoCache: (callback) => {
-    chrome.storage.local.get('user_info', payload => {
-      callback(payload.user_info)
+  getUserLogin: (callback) => {
+    chrome.storage.local.get('user_login', payload => {
+      callback(payload.user_login)
     });
   },
-  removeUserInfoCache: () => {
-    chrome.storage.local.remove('user_info');
+  removeUserLogin: () => {
+    chrome.storage.local.remove('user_login');
   },
+
   // 
 };
 
 /**
  * Sateraito Request
- * 
+ *
  */
 const SateraitoRequest = {
+  _get: (url, callback) => {
+    const self = Authorization;
 
+    // Action call request
+    fetch(url,
+      {
+        headers: {},
+      })
+
+      // handler for response success
+      .then(async dataRes => {
+        let jsonData = await dataRes.json();
+
+        let isSuccess = true;
+        if ('status' in jsonData) {
+          if (jsonData['status'] != 'ok') {
+            isSuccess = false;
+          }
+        }
+
+        let data = jsonData;
+        if ('data' in jsonData) {
+          data = jsonData['data'];
+        }
+
+        callback(isSuccess, data);
+      })
+
+      // handler for request or response is error
+      .catch(error => {
+        callback(false, undefined);
+      })
+  },
+
+  _post: (url, data, callback) => {
+    const self = Authorization;
+
+    // Action call request
+    fetch(url,
+      {
+        method: 'POST',
+        headers: {},
+        body: JSON.stringify(data)
+      })
+
+      // handler for response success
+      .then(async dataRes => {
+        let jsonData = await dataRes.json();
+
+        let isSuccess = true;
+        if ('status' in jsonData) {
+          if (jsonData['status'] != 'ok') {
+            isSuccess = false;
+          }
+        }
+
+        let data = jsonData;
+        if ('data' in jsonData) {
+          data = jsonData['data'];
+        }
+
+        callback(isSuccess, data);
+      })
+
+      // handler for request or response is error
+      .catch(error => {
+        callback(false, undefined);
+      })
+  },
 };
 
+/**
+ * FirebaseManager
+ *
+ */
+const FirebaseManager = {
+  _config: null,
+  _app: null,
+  _database: null,
+
+  _init: () => {
+    const self = FirebaseManager;
+
+    self.loadConfig(webappConfig => {
+      if (typeof webappConfig == 'undefined') {
+        console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
+        return;
+      }
+
+      self._config = webappConfig;
+
+      // Initialize Firebase
+      self._app = firebase.initializeApp(self._config);
+      self._database = firebase.database();
+    });
+  },
+
+  loadConfig: (callback) => {
+    SateraitoRequest._post(`${SERVER_URL}/api/webapp/config`, {'config_get': 'firebase_config'}, (success, webappConfig) => {
+      callback(success ? webappConfig : undefined);
+    });
+  },
+};
+
+/**
+ * Authorization
+ *
+ */
 const Authorization = {
-  _getRequest: (url, callback) => {
-    const self = Authorization;
-
-    self.getAccessToken(accessToken => {
-      // Action call request
-      fetch(url,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          },
-        })
-
-        // handler for response success
-        .then(async dataRes => {
-          let jsonData = await dataRes.json();
-          callback(true, jsonData);
-        })
-
-        // handler for request or response is error
-        .catch(error => {
-          callback(false, undefined);
-        })
-    });
-
-  },
-  _postRequest: (url, data, callback) => {
-    const self = Authorization;
-
-    self.getAccessToken(accessToken => {
-      // Action call request
-      fetch(url,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          },
-          body: JSON.stringify(data)
-        })
-
-        // handler for response success
-        .then(async dataRes => {
-          let jsonData = await dataRes.json();
-          callback(true, jsonData);
-        })
-
-        // handler for request or response is error
-        .catch(error => {
-          callback(false, undefined);
-        })
-    });
-
-  },
+  info: null,
 
   /**
    * getAccessToken
-   *  
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   getAccessToken: (callback) => {
     _StorageManager.getAccessTokenCache(tokenInfo => {
@@ -283,10 +338,9 @@ const Authorization = {
       if (now.toISOString() > tokenInfo.expiry) {
         MyUtils.debugLog('OVER TIME TOKEN - Try get new access token');
 
-        chrome.identity.getAuthToken({ interactive: false }, token => {
-          _StorageManager.setAccessTokenCache(token);
-          callback(token);
-        });
+        // TODO:: Send request get access token
+        //  _StorageManager.setAccessTokenCache(token);
+        //  callback(token);
 
       } else {
         callback(tokenInfo.value);
@@ -296,75 +350,100 @@ const Authorization = {
 
   /**
    * getUserInfo
-   *  
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   getUserInfo: (callback) => {
     const self = Authorization;
 
-    _StorageManager.getUserInfoCache(userInfoCache => {
-      if (userInfoCache) {
-        callback(userInfoCache);
+    SateraitoRequest._get(`${SERVER_URL}/api/auth/get-info`, (success, userInfo) => {
+      if (success) {
 
+        _StorageManager.setUserLogin(userInfo);
+
+        callback(userInfo);
       } else {
-        self._getRequest(`https://www.googleapis.com/oauth2/v1/userinfo`, (success, userInfo) => {
-          if (success) {
-            _StorageManager.setUserInfoCache(userInfo);
-            callback(userInfo);
-          } else {
-            callback(undefined);
-          }
-        })
+        callback();
       }
     });
   },
 
   /**
    * checkUserLogin
-   *  
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   checkUserLogin: (callback) => {
     const self = Authorization;
 
-    self.getAccessToken(accessToken => {
-      callback(accessToken && typeof accessToken != 'undefined');
+    self.getUserInfo(userInfo => {
+      callback(typeof userInfo != 'undefined');
     });
-
   },
 
   /**
    * handlerLogin
-   *  
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   handlerLogin: (callback) => {
     const self = Authorization;
 
-    // chrome.identity.getAuthToken({ interactive: true }, token => {
-    //   if (callback) {
-    //     _StorageManager.setAccessTokenCache(token);
-    //
-    //     callback(token);
-    //   }
-    // });
-    window.open(`${SERVER_URL}/a/login`)
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    const specs = `width=${width},height=${height},top=${top},left=${left},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`;
+
+    window.open(`${SERVER_URL}/a/login`, '_blank', specs);
+
+    // Function to handle incoming messages from the login window
+    function receiveMessage(event) {
+      // Process the received message
+      console.log('Received message from login window:', event.data);
+
+      self.getUserInfo(userInfo => {
+        callback(event.data == 'success', userInfo)
+      });
+    }
+
+    // Add an event listener for messages
+    window.addEventListener('message', receiveMessage, false);
   },
 
   /**
    * handlerLogout
-   *  
-   * @param {Function} callback 
+   *
+   * @param {Function} callback
    */
   handlerLogout: (callback) => {
     const self = Authorization;
 
     try {
 
-      _StorageManager.removeUserInfoCache();
-      _StorageManager.removeAccessTokenCache();
+      const width = 500;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      const specs = `width=${width},height=${height},top=${top},left=${left},status=no,toolbar=no,menubar=no,location=no,resizable=yes,scrollbars=yes`;
 
-      return callback(true);
+      const logoutWindow = window.open(`${SERVER_URL}/a/logout`, '_blank', specs);
+
+      // Function to handle incoming messages from the login window
+      function receiveMessage(event) {
+        // Process the received message
+        console.log('Received message from login window:', event.data);
+
+        logoutWindow.close();
+
+        _StorageManager.removeUserLogin();
+        _StorageManager.removeAccessTokenCache();
+
+        callback(true);
+      }
+
+      // Add an event listener for messages
+      window.addEventListener('message', receiveMessage, false);
 
     } catch (error) {
       callback(false);

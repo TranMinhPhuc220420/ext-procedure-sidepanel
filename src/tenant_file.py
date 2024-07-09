@@ -14,7 +14,6 @@ from ucf.utils import loginfunc
 from google.appengine.ext import blobstore
 from google.appengine.api import app_identity
 from ucf.pages.file import *
-from ucf.pages.user_info import *
 import sateraito_inc
 import sateraito_func
 from datetime import datetime, timedelta

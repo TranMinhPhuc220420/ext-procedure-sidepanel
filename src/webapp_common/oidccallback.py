@@ -17,7 +17,6 @@ import sateraito_inc
 import sateraito_func
 from ucf.utils.ucfutil import UcfUtil
 from webapp_common.base_helper import *
-from ucf.pages.user_info import *
 from ucf.utils.models import *
 
 # get credentials with server-side retry
@@ -356,6 +355,15 @@ class OIDCCallback(WebappHelper):
 		logging.info('viewer_email=' + str(viewer_email))
 		logging.info('opensocial_viewer_id=' + str(opensocial_viewer_id))
 
+		# auto register user
+		user_info = {
+			'name': id_token.get('name', ''),
+			'family_name': id_token.get('family_name', ''),
+			'given_name': id_token.get('given_name', ''),
+			'avatar': id_token.get('picture', ''),
+			'locale': id_token.get('locale', sateraito_inc.DEFAULT_LANGUAGE),
+		}
+
 		# # G Suite 版申込ページ対応…管理者判定＆UserEntry作成 2017.06.05
 		# # 管理者判定
 		# if with_admin_consent:
@@ -418,7 +426,7 @@ class OIDCCallback(WebappHelper):
 		if is_admin and tenant_entry is None:
 			tenant_entry = sateraito_func.insertGoogleAppsDomainEntry(google_apps_domain, google_apps_domain, is_free_mode=True)
 
-		success, msg_err = sateraito_func.registerUserEntry(viewer_email, google_apps_domain, is_admin, False, email_verified=email_verified)
+		success, msg_err = sateraito_func.registerUserEntry(viewer_email, user_info, google_apps_domain, is_admin, False, email_verified=email_verified)
 		if not success:
 			vhtml = '<html><head>'
 			vhtml += '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'

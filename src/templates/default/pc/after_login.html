@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login success</title>
+</head>
+<body>
+<h1>Sateraito</h1>
+<h2>Login success</h2>
+
+<script>
+  // Function to send a message to the parent window
+  function sendMessageToParentWindow(message) {
+    if (window.opener) {
+      window.opener.postMessage(message, '*');
+    } else {
+      console.error('Parent window is not available.');
+    }
+
+    setTimeout(e => {
+      window.close();
+    }, 1000);
+  }
+  sendMessageToParentWindow('success');
+</script>
+</body>
+</html>

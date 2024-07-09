@@ -36,12 +36,11 @@ class LoginPage(WebappHelper):
 
 			if not is_ok:
 				return body_for_not_ok
-			
-			return {
-				'email': self.viewer_email,
+
+			return self.render_template('after_login.html', self._design_type, vals={
+				'viewer_email': self.viewer_email,
 				'viewer_id': self.viewer_id,
-				# 'is_workflow_admin': self.is_workflow_admin,
-			}
+			})
 
 		except BaseException as e:
 			self.outputErrorLog(e)
@@ -73,7 +72,7 @@ class LogoutPage(WebappHelper):
 			loginfunc.logout(self)
 
 			# clear session value
-			self.setSession('id_user', '')
+			self.setSession('viewer_email', '')
 			self.setSession('loggedin_timestamp', None)  # G Suiteのマルチログイン時にiframe内でOIDC認証ができなくなったので強制で少しだけ高速化オプションする対応＆SameSite対応 2019.10.28
 			self.setSession('opensocial_viewer_id', '')
 			self.setSession('is_oidc_loggedin', False)
@@ -81,7 +80,10 @@ class LogoutPage(WebappHelper):
 			# clear openid connect session
 			self.removeAppsCookie()
 
-			return self.redirect('/auth/sign-in')
+			return self.render_template('after_logout.html', self._design_type, vals={
+				'viewer_email': self.viewer_email,
+				'viewer_id': self.viewer_id,
+			})
 
 		except BaseException as e:
 			self.outputErrorLog(e)

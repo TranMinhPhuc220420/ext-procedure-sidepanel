@@ -11,14 +11,39 @@ model = 'gpt-3.5-turbo'
 NUM_PER_PAGE = 15
 
 
+class WebAppConfig(WebappHelper):
+  def processOfRequest(self):
+    try:
+      if not self.checkLogin():
+        return self.responseError403()
+
+      request_json = json.JSONDecoder().decode(request.get_data().decode())
+
+      config_get = request_json.get('config_get')
+      logging.info("config_get=" + str(config_get))
+
+      ret_obj = {}
+
+      if config_get == 'firebase_config':
+        ret_obj = sateraito_inc.FIREBASE_CONFIG
+
+      self.send_success_response(ret_obj)
+
+    except BaseException as e:
+      logging.error(str(e))
+      return self.send_error_response({
+        'error_message': 'MSG_SYSTEM_ERROR',
+        'error_code': 999
+      })
+
+
 ############################################################
 # REQUEST FOR USER LOGGED
 ############################################################
 class AuthGetInfo(WebappHelper):
   def processOfRequest(self):
     try:
-      # check login
-      if str(self.viewer_email) == '' or self.viewer_email is None:
+      if not self.checkLogin():
         return self.responseError403()
 
       google_apps_domain = sateraito_func.getDomainPart(self.viewer_email)
@@ -28,12 +53,6 @@ class AuthGetInfo(WebappHelper):
         return self.send_error_response({
           'error_message': self.getMsg('NOTFOUND_USER_ENTRY'),
           'error_code': 400
-        })
-
-      if sateraito_func.logoutIfUserDisabled(self, google_apps_domain, self.viewer_email, user_entry_dict=user_entry_dict):
-        return self.send_error_response({
-          'error_message': self.getMsg('ACCOUNT_DISABLED_IN_APP'),
-          'error_code': 403
         })
 
       ret_obj = {
@@ -54,8 +73,7 @@ class AuthGetInfo(WebappHelper):
       self.send_success_response(ret_obj)
 
     except BaseException as e:
-      self.outputErrorLog(e)
-      # return Response(UcfMessage.getMessage(self.getMsg('MSG_SYSTEM_ERROR'), ()), status=999)
+      logging.error(str(e))
       return self.send_error_response({
         'error_message': 'MSG_SYSTEM_ERROR',
         'error_code': 999
@@ -75,12 +93,19 @@ class RequestTodoSomething(WebappHelper):
         'error_code': 999
       })
 
+
 def add_url_rules(app):
   # ============ URL INDEX PAGE ============
 
   # ============ URL API ============
 
-  # For /auth/<request_action>
-  app.add_url_rule('/api/auth/get-info', view_func=AuthGetInfo.as_view(__name__ + '.AuthGetInfo'))
+  # For /webapp/<request_action>
+  app.add_url_rule('/api/webapp/config',
+                   view_func=WebAppConfig.as_view(__name__ + '.WebAppConfig'))
 
-  app.add_url_rule('/api/req-todo-something', view_func=RequestTodoSomething.as_view(__name__ + '.RequestTodoSomething'))
+  # For /auth/<request_action>
+  app.add_url_rule('/api/auth/get-info',
+                   view_func=AuthGetInfo.as_view(__name__ + '.AuthGetInfo'))
+
+  app.add_url_rule('/api/req-todo-something',
+                   view_func=RequestTodoSomething.as_view(__name__ + '.RequestTodoSomething'))

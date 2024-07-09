@@ -1,14 +1,14 @@
 (() => {
   const idBtnWithGoogle = '#sign-in-with-google';
 
-  const handlerSuccess = async (message) => {
+  const handlerSuccess = (message) => {
     $(idBtnWithGoogle).addClass('login-success');
 
-    try { // Initiate the browser prompt.
-      const res = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch (err) {
-      alert(chrome.i18n.getMessage('des_error_not_permission_microphone'))
-    }
+    // try { // Initiate the browser prompt.
+    //   const res = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    // } catch (err) {
+    //   alert(chrome.i18n.getMessage('des_error_not_permission_microphone'))
+    // }
 
     $(idBtnWithGoogle).find('.text').html(`${message} (3s)`);
     let countDown = 3;
@@ -31,10 +31,10 @@
     $(btnEl).attr('disabled', 'disabled');
     $(btnEl).addClass('is-loading');
 
-    Authorization.handlerLogin(accessToken => {
+    Authorization.handlerLogin(success => {
       $(btnEl).removeClass('is-loading');
 
-      if (!accessToken) {
+      if (!success) {
         handlerFailed();
       } else {
         let message = chrome.i18n.getMessage('msg_login_success')
@@ -43,8 +43,12 @@
     });
   });
 
+
+  $(idBtnWithGoogle).attr('disabled', 'disabled');
+  $(idBtnWithGoogle).addClass('is-loading');
   Authorization.checkUserLogin(isLogged => {
     $(idBtnWithGoogle).attr('disabled', 'disabled');
+    $(idBtnWithGoogle).removeClass('is-loading');
 
     if (isLogged) {
       let message = chrome.i18n.getMessage('msg_welcome_back_after_auto_login')
