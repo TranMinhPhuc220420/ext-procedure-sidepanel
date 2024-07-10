@@ -1,44 +1,4 @@
-:root {
-  --base-text-color: #2a2a2a;
-  --background-tooltip-color: #4e4e4e;
-  --default-text-color: rgba(0, 0, 0, 87);
-  --white-color: #fff;
-
-  --border-danger-color: #f5c2c7;
-
-  --background-black-color: #2a2a2a;
-  --background-gray-color: #f7f7f7;
-  --background-gray-2-color: #f4f4f4;
-  --background-button-hover: #dedede;
-  --background-danger-color: #f8d7da;
-  --background-black-gray-color: #575757;
-  --background-success-color: #3bb74d;
-  --background-danger-color: #f8d7da;
-
-  --base-text-gray-color: #ddd;
-  --base-text-danger-color: #842029;
-
-  --base-color: #8d5bef;
-  --base-color-2: #ae8cf2;
-  --base-color-3: #e4d5ff;
-  --base-color-4: #f6f2ff;
-  --base-color-5: #6135bb;
-
-  // --base-color: #ef5b5b;
-  // --base-color-2: #f28c8c;
-  // --base-color-3: #ffbfbf;
-  // --base-color-4: #fff2f2;
-  // --base-color-5: #bb3535;
-
-  // --base-color: #5bef71;
-  // --base-color-2: #8cef71;
-  // --base-color-3: #e8ffef;
-  // --base-color-4: #e8ffef;
-  // --base-color-5: #bbefca;
-
-  --base-text-button-color: #fff;
-  --sidebar-action-btn: #e8e8e8;
-}
+@import "constant.css";
 
 body {
   margin: 0;

@@ -5,6 +5,7 @@
   "version": "1.0.0",
   "default_locale": "ja",
   "permissions": [
+    "notifications",
     "activeTab",
     "sidePanel",
     "storage",
@@ -25,6 +26,9 @@
         "third-party/crypto/crypto-js.min.js",
         "third-party/crypto/md5.js",
         "third-party/jquery-1.10.2.min.js",
+        "third-party/firebase/firebase-app.js",
+        "third-party/firebase/firebase-database.js",
+        "scripts/common.js",
         "scripts/sateraito_lang.js",
         "scripts/content.js"
       ],

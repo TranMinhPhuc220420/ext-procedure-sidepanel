@@ -154,62 +154,45 @@ const MyUtils = {
       method: 'open_side_panel',
     })
   },
+
+  /**
+   * getDomainEmail
+   *
+   * @param {string} email
+   * @returns {string}
+   */
+  getDomainEmail: (email) => {
+    return email.split('@')[1];
+  },
+
+  /**
+   * toPathDomain
+   *
+   * @param {string} domain
+   * @returns {string}
+   */
+  toPathDomain: (domain) => {
+    return domain.replaceAll('.', '__');
+  }
 };
 
 /**
  * _Storage Manager
  *
  */
-const _StorageManager = {
-  // For Auth
-  setAccessTokenCache: (access_token, expiryInMinutes = 5, callback) => {
-    const now = new Date();
-    const expiryTime = new Date(now.getTime() + expiryInMinutes * 60000);
-
-    const tokenData = {
-      value: access_token,
-      expiry: expiryTime.toISOString()
-    };
-
-    chrome.storage.local.set({user_access_token: tokenData}, () => {
-      if (callback) {
-        callback();
-      }
-    });
-  },
-  getAccessTokenCache: (callback) => {
-    chrome.storage.local.get('user_access_token', payload => {
-      callback(payload.user_access_token)
-    });
-  },
-  removeAccessTokenCache: () => {
-    chrome.storage.local.remove('user_access_token');
-  },
-
-  setUserLogin: (user, callback) => {
-    chrome.storage.local.set({user_login: user}, () => {
-      if (callback) {
-        callback();
-      }
-    });
-  },
-  getUserLogin: (callback) => {
-    chrome.storage.local.get('user_login', payload => {
-      callback(payload.user_login)
-    });
-  },
-  removeUserLogin: () => {
-    chrome.storage.local.remove('user_login');
-  },
-
-  // 
-};
+const _StorageManager = {};
 
 /**
  * Sateraito Request
  *
  */
 const SateraitoRequest = {
+  /**
+   * Request method GET
+   *
+   * @param {string} url
+   * @param {Function} callback
+   */
   _get: (url, callback) => {
     const self = Authorization;
 
@@ -244,6 +227,14 @@ const SateraitoRequest = {
       })
   },
 
+  /**
+   * Request method POST
+   *
+   * @param {string} url
+   * @param {Object} data
+   * @param {Function} callback
+   * @private
+   */
   _post: (url, data, callback) => {
     const self = Authorization;
 
@@ -289,29 +280,130 @@ const FirebaseManager = {
   _config: null,
   _app: null,
   _database: null,
+  _messaging: null,
 
-  _init: () => {
+  /**
+   * Initialize firebase app
+   *
+   */
+  _init: async () => {
     const self = FirebaseManager;
 
-    self.loadConfig(webappConfig => {
-      if (typeof webappConfig == 'undefined') {
-        console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
-        return;
-      }
+    const firebaseConfig = await self.loadConfig();
+    if (!firebaseConfig) {
+      console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
+      return;
+    }
 
-      self._config = webappConfig;
+    self._config = firebaseConfig;
 
-      // Initialize Firebase
-      self._app = firebase.initializeApp(self._config);
+    // Initialize Firebase
+    self._app = firebase.initializeApp(self._config);
+
+    if (firebase.database) {
       self._database = firebase.database();
+    }
+
+    if (firebase.messaging) {
+      self._messaging = firebase.messaging();
+      self._messaging.usePublicVapidKey(self._config['vapidKey']);
+      self._messaging.onMessage(function (payload) {
+
+        console.log('Message received. ', payload); // [START_EXCLUDE]
+
+        var data = payload.data.data;
+        if (data) {
+          data = JSON.parse(data);
+          var datanoti = payload;
+          datanoti.data.data = {url: data.url};
+          navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope').then(function (registration) {
+            registration.showNotification(
+              datanoti.data.title,
+              datanoti.data
+            )
+          });
+        }
+      });
+      self._messaging.onTokenRefresh(function () {
+        self.messaging.getToken().then(function (refreshedToken) {
+          console.log('Token refreshed.');
+          // Indicate that the new Instance ID token has not yet been sent to the
+          // app server.
+          //  setTokenSentToServer(false);
+          // Send Instance ID token to app server.
+          self.sendTokenToServer(refreshedToken);
+          // [END_EXCLUDE]
+        }).catch(function (err) {
+          console.log('Unable to retrieve refreshed token ', err);
+          //showToken('Unable to retrieve refreshed token ', err);
+        });
+      });
+    }
+  },
+
+  initMessaging: (userEmail) => {
+    return new Promise((resolve, reject) => {
+      FirebaseManager._messaging.getToken().then((currentToken) => {
+        if (currentToken) {
+          let values = {
+            method: 'api_domain_set_token_notification',
+            payload: {
+              current_token: currentToken,
+              user_email: userEmail,
+              domain_email: MyUtils.getDomainEmail(userEmail)
+            }
+          }
+          chrome.runtime.sendMessage(values, (result) => {
+            console.log(result)
+            resolve({success: true, msg: '', current_token: currentToken});
+          });
+        } else {
+          reject({success: false, msg: 'No registration token available. Request permission to generate one.'});
+        }
+      }).catch((err) => {
+        reject({success: false, msg: 'An error occurred while retrieving token. ' + err});
+      });
     });
   },
 
-  loadConfig: (callback) => {
-    SateraitoRequest._post(`${SERVER_URL}/api/webapp/config`, {'config_get': 'firebase_config'}, (success, webappConfig) => {
-      callback(success ? webappConfig : undefined);
-    });
+  /**
+   * Call request get config from server
+   *
+   * @return {Promise<Object>}
+   */
+  loadConfig: () => {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({method: 'api_firebase_load_config'}, (config) => {
+        if (config) {
+          resolve(config);
+        } else {
+          reject(config)
+        }
+      });
+    })
   },
+
+  // Functions for mail
+
+  /**
+   * addRequestCheckMailToAdmin
+   *
+   * @param {string} userEmail
+   * @param {string} emailId
+   */
+  addRequestCheckMailToAdmin: (userEmail, emailId) => {
+    const self = FirebaseManager;
+
+    let email_domain = MyUtils.getDomainEmail(userEmail);
+    let domain_path = MyUtils.toPathDomain(email_domain);
+
+    let reference = self._database.ref(`${domain_path}/${emailId}`);
+    reference.set({
+      'id_email': emailId,
+      'user_email': userEmail,
+      'created_date': new Date(),
+    });
+  }
 };
 
 /**
@@ -322,33 +414,6 @@ const Authorization = {
   info: null,
 
   /**
-   * getAccessToken
-   *
-   * @param {Function} callback
-   */
-  getAccessToken: (callback) => {
-    _StorageManager.getAccessTokenCache(tokenInfo => {
-      if (!tokenInfo) {
-        callback(false);
-        return;
-      }
-
-      const now = new Date();
-
-      if (now.toISOString() > tokenInfo.expiry) {
-        MyUtils.debugLog('OVER TIME TOKEN - Try get new access token');
-
-        // TODO:: Send request get access token
-        //  _StorageManager.setAccessTokenCache(token);
-        //  callback(token);
-
-      } else {
-        callback(tokenInfo.value);
-      }
-    })
-  },
-
-  /**
    * getUserInfo
    *
    * @param {Function} callback
@@ -356,15 +421,9 @@ const Authorization = {
   getUserInfo: (callback) => {
     const self = Authorization;
 
-    SateraitoRequest._get(`${SERVER_URL}/api/auth/get-info`, (success, userInfo) => {
-      if (success) {
-
-        _StorageManager.setUserLogin(userInfo);
-
-        callback(userInfo);
-      } else {
-        callback();
-      }
+    chrome.runtime.sendMessage({method: 'api_get_user_info'}, res => {
+      self.info = res;
+      callback(res);
     });
   },
 
@@ -377,7 +436,12 @@ const Authorization = {
     const self = Authorization;
 
     self.getUserInfo(userInfo => {
-      callback(typeof userInfo != 'undefined');
+      let isLogged = false;
+      if (userInfo) {
+        isLogged = true;
+      }
+
+      callback(isLogged);
     });
   },
 
@@ -403,7 +467,13 @@ const Authorization = {
       console.log('Received message from login window:', event.data);
 
       self.getUserInfo(userInfo => {
-        callback(event.data == 'success', userInfo)
+
+        let isSuccess = false;
+        if (userInfo) {
+          isSuccess = true;
+        }
+
+        callback((event.data == 'success') && isSuccess, userInfo)
       });
     }
 
@@ -435,9 +505,6 @@ const Authorization = {
         console.log('Received message from login window:', event.data);
 
         logoutWindow.close();
-
-        _StorageManager.removeUserLogin();
-        _StorageManager.removeAccessTokenCache();
 
         callback(true);
       }

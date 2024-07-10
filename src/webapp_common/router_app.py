@@ -1,7 +1,11 @@
 # coding: utf-8
+import os, sys
+
 from webapp_common.base_helper import *
 
 from ucf.utils.models import GoogleAppsDomainEntry, GoogleAppsUserEntry
+
+from firebase_admin import messaging
 
 import sateraito_func
 
@@ -9,6 +13,11 @@ import sateraito_func
 model = 'gpt-3.5-turbo'
 
 NUM_PER_PAGE = 15
+
+
+# path_for_default = os.path.join(os.path.dirname(__file__))
+# cred = credentials.Certificate(path_for_default + "/firebase_key.json")
+# default_app = firebase_admin.initialize_app(cred)
 
 
 class WebAppConfig(WebappHelper):
@@ -40,6 +49,77 @@ class WebAppConfig(WebappHelper):
 ############################################################
 # REQUEST FOR USER LOGGED
 ############################################################
+
+class ActionNotification(WebappHelper):
+  def processOfRequest(self, google_apps_domain):
+    try:
+      if not self.checkLogin():
+        return self.responseError403()
+
+      request_json = json.JSONDecoder().decode(request.get_data().decode())
+
+      token_notification = request_json.get('token_notification')
+      logging.info("token_notification=" + str(token_notification))
+
+      user_entry = GoogleAppsUserEntry.getInstance(google_apps_domain, self.viewer_email)
+      if user_entry is None:
+        return self.send_error_response({
+          'error_message': self.getMsg('NOTFOUND_USER_ENTRY'),
+          'error_code': 400
+        })
+
+      user_entry.token_notification = token_notification
+      user_entry.put()
+
+      ret_obj = {
+        'msg': 'ok'
+      }
+
+      self.send_success_response(ret_obj)
+
+    except BaseException as e:
+      logging.error(str(e))
+      return self.send_error_response({
+        'error_message': 'MSG_SYSTEM_ERROR',
+        'error_code': 999
+      })
+
+
+class SetTokenNotification(WebappHelper):
+  def processOfRequest(self, google_apps_domain):
+    try:
+      if not self.checkLogin():
+        return self.responseError403()
+
+      request_json = json.JSONDecoder().decode(request.get_data().decode())
+
+      token_notification = request_json.get('token_notification')
+      logging.info("token_notification=" + str(token_notification))
+
+      user_entry = GoogleAppsUserEntry.getInstance(google_apps_domain, self.viewer_email)
+      if user_entry is None:
+        return self.send_error_response({
+          'error_message': self.getMsg('NOTFOUND_USER_ENTRY'),
+          'error_code': 400
+        })
+
+      user_entry.token_notification = token_notification
+      user_entry.put()
+
+      ret_obj = {
+        'msg': 'ok'
+      }
+
+      self.send_success_response(ret_obj)
+
+    except BaseException as e:
+      logging.error(str(e))
+      return self.send_error_response({
+        'error_message': 'MSG_SYSTEM_ERROR',
+        'error_code': 999
+      })
+
+
 class AuthGetInfo(WebappHelper):
   def processOfRequest(self):
     try:
@@ -83,8 +163,24 @@ class AuthGetInfo(WebappHelper):
 class RequestTodoSomething(WebappHelper):
   def processOfRequest(self):
     try:
+      if not self.checkLogin():
+        return self.responseError403()
+
+      google_apps_domain = sateraito_func.getDomainPart(self.viewer_email)
+      user_entry_dict = GoogleAppsUserEntry.get_dict(google_apps_domain, self.viewer_email)
+
+      message = messaging.Message(
+        notification=messaging.Notification(
+          title=sateraito_func.randomString(10),
+          body=sateraito_func.randomString(30),
+        ),
+        token=user_entry_dict['token_notification']
+      )
+
+      response = messaging.send_all([message])
+
       return self.send_success_response({
-        "result": "success",
+        "result": str(response),
       })
     except BaseException as e:
       self.outputErrorLog(e)
@@ -104,6 +200,9 @@ def add_url_rules(app):
                    view_func=WebAppConfig.as_view(__name__ + '.WebAppConfig'))
 
   # For /auth/<request_action>
+  app.add_url_rule('/<google_apps_domain>/api/auth/set-token-notification',
+                   view_func=SetTokenNotification.as_view(__name__ + '.SetTokenNotification'))
+
   app.add_url_rule('/api/auth/get-info',
                    view_func=AuthGetInfo.as_view(__name__ + '.AuthGetInfo'))
 

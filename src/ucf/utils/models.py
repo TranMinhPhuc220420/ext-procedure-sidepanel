@@ -407,6 +407,7 @@ class GoogleAppsUserEntry(UCFModel2):
   provider = ndb.StringProperty(default='')
   locale = ndb.StringProperty()
   is_admin = ndb.BooleanProperty(default=False)
+  token_notification = ndb.StringProperty()
   disable_user = ndb.BooleanProperty()
   created_date = ndb.DateTimeProperty(auto_now_add=True)
   updated_date = ndb.DateTimeProperty(auto_now_add=True)

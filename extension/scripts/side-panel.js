@@ -1,5 +1,5 @@
-(() => {
-  FirebaseManager._init();
+(async () => {
+  await FirebaseManager._init();
 
   const domain_path = 'vn2.sateraito.co.jp'.replaceAll('.', '__');
   $('#btn_send_test').on('click', () => {
@@ -14,22 +14,20 @@
     });
   });
 
-  setTimeout(() => {
-    let reference_watch = FirebaseManager._database.ref(`${domain_path}`);
-    reference_watch.on('value', (snapshot) => {
-      const data = snapshot.val();
-      console.log(data);
+  let reference_watch = FirebaseManager._database.ref(`${domain_path}`);
+  reference_watch.on('value', (snapshot) => {
+    const data = snapshot.val();
+    console.log(data);
 
-      $("#list_id_email_test").html('');
+    $("#list_id_email_test").html('');
 
-      for (const dataKey in data) {
-        let testEl = document.createElement('div');
-        testEl.innerHTML = `
+    for (const dataKey in data) {
+      let testEl = document.createElement('div');
+      testEl.innerHTML = `
           ID email: ${dataKey}
         `;
-        $("#list_id_email_test").append(testEl)
-      }
-    });
-  }, 1000)
+      $("#list_id_email_test").append(testEl)
+    }
+  });
 
 })();

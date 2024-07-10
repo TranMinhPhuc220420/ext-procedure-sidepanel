@@ -97,6 +97,7 @@
         }
 
         self._config = webappConfig;
+        chrome.storage.local.set({firebase_config: self._config});
 
         // Initialize Firebase
         self._app = firebase.initializeApp(self._config);
@@ -143,43 +144,53 @@
         const data = snapshot.val();
         console.log(data);
       });
-    },
-
-    // other func for ext
-    pushEmailRequestCheck: (id_email, params) => {
-      const self = _Firebase_SW;
-      const domain_path = DOMAIN_USER_ADDON.replaceAll('.', '__')
-
-      let reference = self._database.ref(`${domain_path}/${id_email}`);
-      reference.set(params);
-    },
+    }
   };
 
-  const _Storage_SW = {
-    getUserLogin: (callback) => {
-      chrome.storage.local.get('user_login', payload => {
-        callback(payload.user_login)
+  const _Authorization_SW = {
+    /**
+     * getUserInfo
+     *
+     * @param {Function} callback
+     */
+    getUserInfo: (callback) => {
+      const self = _Authorization_SW;
+
+      _getRequest(`${SERVER_URL}/api/auth/get-info`, (success, userInfo) => {
+        if (success) {
+          callback(userInfo);
+        } else {
+          callback();
+        }
       });
     },
 
+    /**
+     * setTokenNotification
+     *
+     * @param {Object} params
+     * @param {Function} callback
+     */
+    setTokenNotification: (params, callback) => {
+      const {domain_email, user_email, current_token} = params;
+
+      const apiUrl = `${SERVER_URL}/${domain_email}/api/auth/set-token-notification`;
+      const formValue = {
+        'token_notification': current_token,
+        'user_email': user_email
+      };
+
+      _postRequest(apiUrl, formValue, (success, result) => {
+        callback(success ? result : undefined);
+      });
+    }
+  };
+
+  const _Storage_SW = {
     onChanged: (payload, type) => {
-      if ('user_login' in payload) {
-        let userLogin = payload['user_login'].newValue;
-
-        if (userLogin) {
-          USER_ADDON_LOGIN = userLogin;
-          EMAIL_USER_ADDON = userLogin.user_email;
-          DOMAIN_USER_ADDON = userLogin.google_apps_domain;
-          if (!DOMAIN_USER_ADDON) {
-            let email = userLogin.user_email;
-            DOMAIN_USER_ADDON = email.split('@')[1]
-          }
-        } else {
-          USER_ADDON_LOGIN = EMAIL_USER_ADDON = DOMAIN_USER_ADDON = undefined;
-        }
-
-        _Firebase_SW.onUserLoginChange();
-      }
+      // if ('key' in payload) {
+      //
+      // }
     }
   };
 
@@ -205,10 +216,24 @@
         });
         break;
 
-      case 'push_email_request_check':
-        let {id_email} = payload;
-        _Firebase_SW.pushEmailRequestCheck(id_email, payload);
-        sendResponse(true);
+      //  Request API to server
+
+      case 'api_get_user_info':
+        _Authorization_SW.getUserInfo(userInfo => {
+          sendResponse(userInfo);
+        });
+        break;
+
+      case 'api_domain_set_token_notification':
+        _Authorization_SW.setTokenNotification(payload, result => {
+          sendResponse(result);
+        });
+        break;
+
+      case 'api_firebase_load_config':
+        _Firebase_SW.loadConfig(config => {
+          sendResponse(config);
+        });
         break;
     }
 
@@ -221,7 +246,7 @@
    */
   const _initExt = () => {
 
-    _Storage_SW.getUserLogin(userLogin => {
+    _Authorization_SW.getUserInfo(userLogin => {
       if (userLogin) {
 
         USER_ADDON_LOGIN = userLogin;

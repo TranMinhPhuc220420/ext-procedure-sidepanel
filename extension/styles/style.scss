@@ -1,0 +1,30 @@
+@import "constant.css";
+
+.J-M.Gj {
+  .bbar-sateraito-ext-procedure {
+
+    .J-N-Jz, img {
+      pointer-events: none !important;
+    }
+
+    &:hover {
+      background-color: #eee;
+      color: #202124;
+    }
+  }
+}
+
+
+.bbar-sateraito-ext-procedure {
+  height: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  margin: 4px 12px 4px 0;
+
+  img {
+    height: 20px;
+    width: 20px;
+  }
+}

@@ -13,6 +13,9 @@ from google.appengine.api import wrap_wsgi_app					# GAEGEN2対応:AppEngine API
 from werkzeug.routing import BaseConverter								# GAEGEN2対応:routingで正規表現を使うために使う
 # from google.appengine.ext import ndb
 
+import firebase_admin
+from firebase_admin import credentials
+
 import os
 import datetime
 
@@ -23,6 +26,11 @@ from utilities.gaesession import GaeNdbSessionInterface											# セッショ
 _TIME_START = time.time()
 
 app = Flask(__name__)
+
+# enable cross domain with developer mode
+from flask_cors import CORS, cross_origin
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+
 app.wsgi_app = wrap_wsgi_app(app.wsgi_app)		# GAEGEN2対応:AppEngine API SDK対応
 
 
@@ -62,6 +70,10 @@ class RegexConverter(BaseConverter):
 		self.regex = items[0]
 app.url_map.converters['regex'] = RegexConverter
 
+cred = credentials.Certificate({
+
+})
+firebase_admin.initialize_app(cred)
 
 # add_url_rules
 import health

@@ -180,7 +180,8 @@ FIREBASE_CONFIG = {
   "storageBucket": "pdsasf-50ce6.appspot.com",
   "messagingSenderId": "639641619695",
   "appId": "1:639641619695:web:fffd775cce7454547a1f1a",
-  "measurementId": "G-WTQXNPQECY"
+  "measurementId": "G-WTQXNPQECY",
+  "vapidKey": "BLyRTnCWp_0fUxM_f6iz6PTZTVQOu4yW0o6wz9ryAYvaPQVhLelzFY_7dJak-9QG_Qq0M7TnNyzKu35UbhhipHc",
 }
 
 URLFETCH_TIMEOUT_SECOND = 45
@@ -203,3 +204,12 @@ OAUTH2_SCOPES_GMAIL = [
 OAUTH2_SCOPES_FOR_CHECK_ADMIN = [
   'https://www.googleapis.com/auth/admin.directory.user.readonly',
 ]
+
+# For OpenID Connect
+WEBAPP_CLIENT_ID = ''
+WEBAPP_CLIENT_SECRET = ''
+
+# 下は、AppEngine の サービスアカウントのキーを作成したときに取得できる JSON
+service_account_info = {
+
+}
