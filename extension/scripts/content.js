@@ -221,8 +221,8 @@ document.addEventListener("RW759_connectExtension", function (e) {
       let idDraftRaw = $(containerBox).find('form.bAs input[name="draft"]').val();
       let idDraft = idDraftRaw.split(':')[1];
 
-      // FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
-      MyUtils.setOpenSidePanel();
+      FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
+      // MyUtils.setOpenSidePanel();
     }
   };
 

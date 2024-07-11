@@ -86,17 +86,73 @@
       })
   };
 
+  const toPathDomain = (domain) => {
+    return domain.replaceAll('.', '__');
+  };
+
   const _Firebase_SW = {
     _config: null,
     _app: null,
     _database: null,
     _messaging: null,
 
+    /**
+     * Initialize firebase app of service worker
+     *
+     */
+    _init: () => {
+      const self = _Firebase_SW;
+
+      self.loadConfig(firebaseConfig => {
+        if (!firebaseConfig) {
+          console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
+          return;
+        }
+
+        self._config = firebaseConfig;
+
+        // Initialize Firebase
+        self._app = firebase.initializeApp(self._config);
+
+        if (firebase.database) {
+          self._database = firebase.database();
+
+          self.setTriggerEventRequestAllowMail()
+        }
+      });
+    },
+
     loadConfig: (callback) => {
       _postRequest(`${SERVER_URL}/api/webapp/config`, {'config_get': 'firebase_config'}, (success, webappConfig) => {
         callback(success ? webappConfig : undefined);
       });
-    }
+    },
+
+    setTriggerEventRequestAllowMail: () => {
+      const self = _Firebase_SW;
+
+      const domain_path = toPathDomain(DOMAIN_USER_ADDON);
+      let reference = self._database.ref(`${domain_path}`);
+
+      reference.on('value', (snapshot) => {
+        const data = snapshot.val();
+        console.log('Service worker: ', data);
+
+        let totalNotSeen = 0;
+        for (const key in data) {
+          if (!data[key].seen_flag) {
+            totalNotSeen++;
+          }
+        }
+
+        if (totalNotSeen > 0) {
+          chrome.action.setBadgeText({text: totalNotSeen.toString()});
+          chrome.action.setBadgeBackgroundColor({color: '#50d06a'});
+        } else {
+          chrome.action.setBadgeText({text: ''});
+        }
+      });
+    },
   };
 
   const _Authorization_SW = {
@@ -209,7 +265,7 @@
           DOMAIN_USER_ADDON = email.split('@')[1]
         }
 
-        // _Firebase_SW._init();
+        _Firebase_SW._init();
       }
     });
 

@@ -386,27 +386,24 @@ const FirebaseManager = {
     reference.set({
       'id_email': emailId,
       'user_email': userEmail,
+      'seen_flag': false,
+      'status': 'pending',
       'created_date': new Date(),
     });
   },
 
+  /**
+   * setTriggerEventRequestAllowMail
+   *
+   */
   setTriggerEventRequestAllowMail: () => {
     const self = FirebaseManager;
     const domain_path = MyUtils.toPathDomain(MyUtils.getDomainEmail(Authorization.info.user_email));
-    console.log(domain_path)
+
     let reference = self._database.ref(`${domain_path}`);
     reference.on('value', (snapshot) => {
-      console.log(snapshot);
       const data = snapshot.val();
       console.log(data);
-
-      let btnTemp = document.createElement('button')
-      btnTemp.textContent = 'Mama'
-      btnTemp.addEventListener('click', MyUtils.setOpenSidePanel)
-      document.body.append(btnTemp);
-
-      btnTemp.click();
-      btnTemp.remove();
     });
   },
 };

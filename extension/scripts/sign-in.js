@@ -6,12 +6,21 @@
   /**
    * Handler set permission notification
    *
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>}
    */
-  const setNotification = async () => {
-    await FirebaseManager._init();
+  const setNotification = async (retry=0) => {
+    if (retry >= 10) {
+      return {success: false, msg: chrome.i18n.getMessage('des_error_set_token_firebase_messaging')};
+    }
 
-    return await FirebaseManager.initMessaging(Authorization.info.user_email);
+    try {
+      // Initiate the browser prompt.
+      await FirebaseManager._init();
+      return await FirebaseManager.initMessaging(Authorization.info.user_email);
+    } catch (err) {
+      console.log(err);
+      return await setNotification(retry++);
+    }
   };
 
   /**
@@ -21,26 +30,17 @@
    */
   const handlerSuccess = async (message) => {
     $(idBtnWithGoogle).addClass('login-success');
+    $(idBtnWithGoogle).find('.text').html(`${message}`);
 
+    const {success, msg, current_token} = await setNotification();
+    console.log(success, msg, current_token)
 
-    let countDown = 3;
-    $(idBtnWithGoogle).find('.text').html(`${message} (${countDown}s)`);
-
-    try { // Initiate the browser prompt.
-      const {success, msg, current_token} = await setNotification();
-      console.log(current_token)
-    } catch (err) {
-      console.log(err)
-      alert(chrome.i18n.getMessage('des_error_not_permission_notification') + err)
+    if (!success) {
+      $(idBtnWithGoogle).addClass('login-failed');
+      $('#sign-in-with-google .text').html(`${msg}`);
+    } else {
+      window.close();
     }
-
-    setInterval(() => {
-      countDown -= 1;
-      $('#sign-in-with-google .text').html(`${message} (${countDown}s)`);
-      if (countDown <= 0) {
-        window.close();
-      }
-    }, 1000);
   };
 
   /**
@@ -49,6 +49,8 @@
    */
   const handlerFailed = () => {
     $(idBtnWithGoogle).removeAttr('disabled', 'disabled');
+    $(idBtnWithGoogle).addClass('login-failed');
+
     window.alert(chrome.i18n.getMessage('msg_login_failed'));
   };
 

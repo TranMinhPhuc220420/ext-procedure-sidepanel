@@ -32,5 +32,8 @@
   },
   "msg_login_failed": {
     "message": "Login failed"
+  },
+  "des_error_set_token_firebase_messaging": {
+    "message": "Error when setting notification"
   }
 }

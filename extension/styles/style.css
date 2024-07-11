@@ -1,4 +1,26 @@
-@import "constant.css";
+:root {
+  --base-text-color: #2a2a2a;
+  --default-text-color: rgba(0, 0, 0, 87);
+  --white-color: #fff;
+  --border-danger-color: #f5c2c7;
+  --background-black-color: #2a2a2a;
+  --background-gray-color: #f7f7f7;
+  --background-gray-2-color: #f4f4f4;
+  --background-button-hover: #dedede;
+  --background-black-gray-color: #575757;
+  --background-success-color: #3bb74d;
+  --background-danger-color: #f8d7da;
+  --base-text-gray-color: #ddd;
+  --base-text-danger-color: #842029;
+  --base-color: #8d5bef;
+  --base-color-2: #ae8cf2;
+  --base-color-3: #d5bfff;
+  --base-color-4: #f6f2ff;
+  --base-color-5: #6135bb;
+  --base-text-button-color: #fff;
+  --sidebar-action-btn: #e8e8e8;
+}
+
 .J-M.Gj .bbar-sateraito-ext-procedure .J-N-Jz, .J-M.Gj .bbar-sateraito-ext-procedure img {
   pointer-events: none !important;
 }
@@ -18,6 +40,4 @@
 .bbar-sateraito-ext-procedure img {
   height: 20px;
   width: 20px;
-}
-
-/*# sourceMappingURL=style.css.map */
+}/*# sourceMappingURL=style.css.map */
