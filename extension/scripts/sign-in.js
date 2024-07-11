@@ -30,8 +30,8 @@
       const {success, msg, current_token} = await setNotification();
       console.log(current_token)
     } catch (err) {
-      // console.log(err)
-      alert(chrome.i18n.getMessage('des_error_not_permission_notification'))
+      console.log(err)
+      alert(chrome.i18n.getMessage('des_error_not_permission_notification') + err)
     }
 
     setInterval(() => {
@@ -57,7 +57,7 @@
   $(idBtnWithGoogle).addClass('is-loading');
   Authorization.checkUserLogin(isLogged => {
     $(idBtnWithGoogle).attr('disabled', 'disabled');
-    $(idBtnWithGoogle).removeClass('is-loading');
+    // $(idBtnWithGoogle).removeClass('is-loading');
 
     if (isLogged) {
       let message = chrome.i18n.getMessage('msg_welcome_back_after_auto_login')

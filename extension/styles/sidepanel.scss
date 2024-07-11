@@ -129,6 +129,16 @@ body {
                   display: block;
                 }
               }
+
+              &.login-success {
+                .icon {
+                  .wrap-loading {
+                    &::before {
+                      background-color: var(--background-success-color) !important;
+                    }
+                  }
+                }
+              }
             }
 
             &.login-success {

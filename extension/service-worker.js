@@ -13,8 +13,8 @@
     try {
       // only avable in manifest v3
       importScripts(
-        "/third-party/firebase/firebase-app.js",
-        "/third-party/firebase/firebase-database.js",
+        "/third-party/firebase-10.12.3/firebase-app-compat.js",
+        "/third-party/firebase-10.12.3/firebase-database-compat.js",
       );
     } catch (err) {
       console.error(err);
@@ -87,62 +87,14 @@
   };
 
   const _Firebase_SW = {
-    _init: () => {
-      const self = _Firebase_SW;
-
-      self.loadConfig(webappConfig => {
-        if (typeof webappConfig == 'undefined') {
-          console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
-          return;
-        }
-
-        self._config = webappConfig;
-        chrome.storage.local.set({firebase_config: self._config});
-
-        // Initialize Firebase
-        self._app = firebase.initializeApp(self._config);
-        self._database = firebase.database();
-
-        self.setRealTimeDB();
-      });
-    },
-
-    onUserLoginChange: () => {
-      const self = _Firebase_SW;
-
-      if (USER_ADDON_LOGIN && !self._config) {
-        self.loadConfig(webappConfig => {
-          if (typeof webappConfig == 'undefined') {
-            console.warn('WEBAPP CONFIG FIREBASE IS ERROR')
-            return;
-          }
-
-          self._config = webappConfig;
-
-          // Initialize Firebase
-          self._app = firebase.initializeApp(self._config);
-          self._database = firebase.database();
-
-          self.setRealTimeDB();
-        });
-      }
-    },
+    _config: null,
+    _app: null,
+    _database: null,
+    _messaging: null,
 
     loadConfig: (callback) => {
       _postRequest(`${SERVER_URL}/api/webapp/config`, {'config_get': 'firebase_config'}, (success, webappConfig) => {
         callback(success ? webappConfig : undefined);
-      });
-    },
-
-    setRealTimeDB: () => {
-      const self = _Firebase_SW;
-      const domain_path = DOMAIN_USER_ADDON.replaceAll('.', '__')
-
-      let reference = self._database.ref(`${domain_path}`);
-      reference.on('value', (snapshot) => {
-        console.log(snapshot);
-        const data = snapshot.val();
-        console.log(data);
       });
     }
   };
@@ -257,7 +209,7 @@
           DOMAIN_USER_ADDON = email.split('@')[1]
         }
 
-        _Firebase_SW._init();
+        // _Firebase_SW._init();
       }
     });
 

@@ -286,7 +286,7 @@ const FirebaseManager = {
    * Initialize firebase app
    *
    */
-  _init: async () => {
+  _init: async (triggerEventAllowMail = false) => {
     const self = FirebaseManager;
 
     const firebaseConfig = await self.loadConfig();
@@ -302,48 +302,34 @@ const FirebaseManager = {
 
     if (firebase.database) {
       self._database = firebase.database();
+
+      if (triggerEventAllowMail) {
+        self.setTriggerEventRequestAllowMail()
+      }
     }
 
     if (firebase.messaging) {
       self._messaging = firebase.messaging();
-      self._messaging.usePublicVapidKey(self._config['vapidKey']);
-      self._messaging.onMessage(function (payload) {
-
-        console.log('Message received. ', payload); // [START_EXCLUDE]
-
-        var data = payload.data.data;
-        if (data) {
-          data = JSON.parse(data);
-          var datanoti = payload;
-          datanoti.data.data = {url: data.url};
-          navigator.serviceWorker.getRegistration('/firebase-cloud-messaging-push-scope').then(function (registration) {
-            registration.showNotification(
-              datanoti.data.title,
-              datanoti.data
-            )
-          });
-        }
-      });
-      self._messaging.onTokenRefresh(function () {
-        self.messaging.getToken().then(function (refreshedToken) {
-          console.log('Token refreshed.');
-          // Indicate that the new Instance ID token has not yet been sent to the
-          // app server.
-          //  setTokenSentToServer(false);
-          // Send Instance ID token to app server.
-          self.sendTokenToServer(refreshedToken);
-          // [END_EXCLUDE]
-        }).catch(function (err) {
-          console.log('Unable to retrieve refreshed token ', err);
-          //showToken('Unable to retrieve refreshed token ', err);
-        });
-      });
     }
   },
 
+  /**
+   * initMessaging
+   *
+   * @param {string} userEmail
+   * @return {Promise<Object>}
+   */
   initMessaging: (userEmail) => {
+    const self = FirebaseManager;
+
     return new Promise((resolve, reject) => {
-      FirebaseManager._messaging.getToken().then((currentToken) => {
+      if (!self._messaging) {
+        reject({success: false, msg: 'Firebase messaging not install'});
+        return;
+      }
+
+      self._messaging.onMessage(e => console.log('self._messaging.onMessage', e))
+      self._messaging.getToken({vapidKey: self._config['vapidKey']}).then((currentToken) => {
         if (currentToken) {
           let values = {
             method: 'api_domain_set_token_notification',
@@ -354,7 +340,6 @@ const FirebaseManager = {
             }
           }
           chrome.runtime.sendMessage(values, (result) => {
-            console.log(result)
             resolve({success: true, msg: '', current_token: currentToken});
           });
         } else {
@@ -403,7 +388,27 @@ const FirebaseManager = {
       'user_email': userEmail,
       'created_date': new Date(),
     });
-  }
+  },
+
+  setTriggerEventRequestAllowMail: () => {
+    const self = FirebaseManager;
+    const domain_path = MyUtils.toPathDomain(MyUtils.getDomainEmail(Authorization.info.user_email));
+    console.log(domain_path)
+    let reference = self._database.ref(`${domain_path}`);
+    reference.on('value', (snapshot) => {
+      console.log(snapshot);
+      const data = snapshot.val();
+      console.log(data);
+
+      let btnTemp = document.createElement('button')
+      btnTemp.textContent = 'Mama'
+      btnTemp.addEventListener('click', MyUtils.setOpenSidePanel)
+      document.body.append(btnTemp);
+
+      btnTemp.click();
+      btnTemp.remove();
+    });
+  },
 };
 
 /**

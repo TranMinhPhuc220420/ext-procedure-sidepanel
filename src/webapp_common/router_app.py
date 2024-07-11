@@ -169,15 +169,41 @@ class RequestTodoSomething(WebappHelper):
       google_apps_domain = sateraito_func.getDomainPart(self.viewer_email)
       user_entry_dict = GoogleAppsUserEntry.get_dict(google_apps_domain, self.viewer_email)
 
+      webpush_action_detail = messaging.WebpushNotificationAction(
+        action='action_detail',
+        title='Detail',
+        icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico"
+      )
+      webpush_action_allow = messaging.WebpushNotificationAction(
+        action='action_allow',
+        title='Allow',
+        icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/images/check-48.png"
+      )
+      webpush_action_block = messaging.WebpushNotificationAction(
+        action='action_block',
+        title='Block',
+        icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/images/close-48.png"
+      )
+      webpush_notification = messaging.WebpushNotification(
+        title=sateraito_func.randomString(10) + "- Title",
+        body=sateraito_func.randomString(30) + "- Description",
+        badge="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico",
+        icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico",
+        actions=[webpush_action_allow, webpush_action_block]
+      )
+      webpush = messaging.WebpushConfig(
+        data={
+          'test': 'hello world!'
+        },
+        notification=webpush_notification
+      )
+
       message = messaging.Message(
-        notification=messaging.Notification(
-          title=sateraito_func.randomString(10),
-          body=sateraito_func.randomString(30),
-        ),
+        webpush=webpush,
         token=user_entry_dict['token_notification']
       )
 
-      response = messaging.send_all([message])
+      response = messaging.send(message)
 
       return self.send_success_response({
         "result": str(response),

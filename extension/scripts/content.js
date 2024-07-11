@@ -221,7 +221,8 @@ document.addEventListener("RW759_connectExtension", function (e) {
       let idDraftRaw = $(containerBox).find('form.bAs input[name="draft"]').val();
       let idDraft = idDraftRaw.split(':')[1];
 
-      FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
+      // FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
+      MyUtils.setOpenSidePanel();
     }
   };
 
@@ -236,23 +237,24 @@ document.addEventListener("RW759_connectExtension", function (e) {
     if (window === window.top) {
       FoDoc = document;
 
-      FBoolMail = strUrl.indexOf("//mail.google.com/") >= 0;
-      if (FBoolMail) {
-        Authorization.getUserInfo(userInfo => {
+      Authorization.getUserInfo(userInfo => {
+
+        FirebaseManager._init(true);
+
+        FBoolMail = strUrl.indexOf("//mail.google.com/") >= 0;
+        if (FBoolMail) {
           if (userInfo) {
             if (userInfo.user_email != getCurrentUser()) {
               alert("Ext Sateraito Warning: Email does not match the logged in email");
               return;
             }
 
-            FirebaseManager._init();
-
             Mail_ExtProcedure._init();
 
             chrome.storage.onChanged.addListener(storageOnChanged);
           }
-        });
-      }
+        }
+      });
 
       $(document).on("click", (event) => {
 

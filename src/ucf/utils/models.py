@@ -427,7 +427,7 @@ class GoogleAppsUserEntry(UCFModel2):
 
   def after_put(self):
     if self is not None:
-      GoogleAppsUserEntry.clearInstanceCache(self.user_email, self.google_apps_domain)
+      GoogleAppsUserEntry.clearInstanceCache(self.google_apps_domain, self.user_email)
 
   def put(self, **kwargs):
     self.before_put()
@@ -484,7 +484,7 @@ class GoogleAppsUserEntry(UCFModel2):
     return None
 
   @classmethod
-  def getInstance(cls, google_apps_domain, email):
+  def getInstance(cls, google_apps_domain, email, timezone=sateraito_inc.DEFAULT_TIMEZONE):
     old_namespace = namespace_manager.get_namespace()
     namespace_manager.set_namespace(google_apps_domain)
 
@@ -495,6 +495,13 @@ class GoogleAppsUserEntry(UCFModel2):
     q.filter(cls.user_email == email_lower)
     q.filter(cls.google_apps_domain == google_apps_domain)
     user_entry = q.get()
+
+    # check memcache
+    memcache_key = cls.getMemcacheKey(google_apps_domain, email)
+    if user_entry:
+      row_dict = user_entry.to_dict()
+      row_dict['created_date'] = UcfUtil.nvl(UcfUtil.getLocalTime(user_entry.created_date, timezone))
+      memcache.set(memcache_key, row_dict, time=cls.NDB_MEMCACHE_TIMEOUT)
 
     namespace_manager.set_namespace(old_namespace)
 
