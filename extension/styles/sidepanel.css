@@ -10,7 +10,7 @@
   --background-button-hover: #dedede;
   --background-black-gray-color: #575757;
   --background-success-color: #3bb74d;
-  --background-danger-color: #d52838;
+  --background-danger-color: #f84b5c;
   --base-text-gray-color: #ddd;
   --base-text-danger-color: #842029;
   --base-color: #8d5bef;
@@ -272,4 +272,6 @@ body ul li {
   to {
     -webkit-transform: scale(1.5);
   }
-}/*# sourceMappingURL=sidepanel.css.map */
+}
+
+/*# sourceMappingURL=sidepanel.css.map */

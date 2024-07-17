@@ -465,11 +465,7 @@ class GoogleAppsUserEntry(UCFModel2):
       namespace_manager.set_namespace(old_namespace)
       return cached_dict
 
-    q = GoogleAppsUserEntry.query()
-    q.filter(cls.user_email == user_email)
-    q.filter(cls.google_apps_domain == google_apps_domain)
-    entry = q.get()
-
+    entry = cls.getInstance(google_apps_domain, user_email, timezone=timezone)
     if entry:
       # set to memcache
       row_dict = entry.to_dict()
@@ -484,20 +480,15 @@ class GoogleAppsUserEntry(UCFModel2):
     return None
 
   @classmethod
-  def getInstance(cls, google_apps_domain, email, timezone=sateraito_inc.DEFAULT_TIMEZONE):
+  def getInstance(cls, google_apps_domain, user_email, timezone=sateraito_inc.DEFAULT_TIMEZONE):
     old_namespace = namespace_manager.get_namespace()
     namespace_manager.set_namespace(google_apps_domain)
 
-    # get data
-    email_lower = str(email).lower()
-
-    q = GoogleAppsUserEntry.query()
-    q.filter(cls.user_email == email_lower)
-    q.filter(cls.google_apps_domain == google_apps_domain)
-    user_entry = q.get()
+    user_email_lower = str(user_email).lower()
+    user_entry = cls.get_by_id(user_email_lower, memcache_timeout=cls.NDB_MEMCACHE_TIMEOUT)
 
     # check memcache
-    memcache_key = cls.getMemcacheKey(google_apps_domain, email)
+    memcache_key = cls.getMemcacheKey(google_apps_domain, user_email_lower)
     if user_entry:
       row_dict = user_entry.to_dict()
       row_dict['created_date'] = UcfUtil.nvl(UcfUtil.getLocalTime(user_entry.created_date, timezone))
@@ -507,3 +498,80 @@ class GoogleAppsUserEntry(UCFModel2):
 
     return user_entry
 
+
+class WorkflowDoc(UCFModel2):
+  """
+  Datastore class to store User data
+  """
+  workflow_doc_id = ndb.StringProperty()
+  user_email = ndb.StringProperty()
+
+  id_email_request_check = ndb.StringProperty()
+  is_draft_email_request_check = ndb.BooleanProperty(default=True)
+  status_request_check = ndb.StringProperty()
+  seen_request_check_flag = ndb.BooleanProperty(default=False)
+
+  del_flag = ndb.BooleanProperty(default=False)
+
+  author_email = ndb.StringProperty()
+  author_name = ndb.StringProperty()
+
+  created_date = ndb.DateTimeProperty(auto_now_add=True)
+  updated_date = ndb.DateTimeProperty(auto_now_add=True)
+
+  def _pre_put_hook(self):
+    """ set default value if property is None
+    """
+    self.clearInstanceCache(self.workflow_doc_id)
+
+  @classmethod
+  def _pre_delete_hook(cls, key):
+    cls.clearInstanceCache(key.id())
+
+  @classmethod
+  def getMemcacheKey(cls, workflow_doc_id):
+    return 'script=workflowdoc-getdict&workflow_doc_id=' + str(workflow_doc_id) + '&g=2'
+
+  @classmethod
+  def clearInstanceCache(cls, workflow_doc_id):
+    if workflow_doc_id is None:
+      return
+    memcache.delete(cls.getMemcacheKey(workflow_doc_id))
+
+  @classmethod
+  def getDict(cls, workflow_doc_id):
+    # check memcache
+    memcache_key = cls.getMemcacheKey(workflow_doc_id)
+    cached_dict = memcache.get(memcache_key)
+    if cached_dict is not None:
+      return cached_dict
+    # get data
+    row = cls.getInstance(workflow_doc_id)
+    if row is None:
+      return None
+    row_dict = row.to_dict()
+    row_dict['id'] = row.key.id()
+    # set to memcache
+    memcache.set(memcache_key, row_dict, time=cls.NDB_MEMCACHE_TIMEOUT)
+    return row_dict
+
+  @classmethod
+  def getInstance(cls, workflow_doc_id):
+    logging.info("getInstance: workflow_doc_id=" + str(workflow_doc_id))
+    row = cls.get_by_id(workflow_doc_id, memcache_timeout=cls.NDB_MEMCACHE_TIMEOUT)
+
+    if row is None:
+      q = cls.query()
+      q = q.filter(cls.workflow_doc_id == workflow_doc_id)
+      row = q.get()
+
+    return row
+
+  @classmethod
+  def getNewWorkflowDocID(cls, string_length=4):
+    new_workflow_doc_id = sateraito_func.createNewId(string_length)
+    if cls.get_by_id(new_workflow_doc_id) is None:
+      logging.info("new_workflow_doc_id=" + str(new_workflow_doc_id))
+      return new_workflow_doc_id
+    else:
+      return cls.getNewWorkflowDocID(string_length=(string_length + 1))

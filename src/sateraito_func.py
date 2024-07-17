@@ -34,6 +34,9 @@ from ucf.utils.ucfutil import *
 import base64
 from ucf.utils.ucfxml import UcfXml
 
+DELIMITER_NAMESPACE_DOMAIN_APP_ID = '_____'
+DEFAULT_APP_ID = 'default'
+
 LIST_LANGUAGE = [sateraito_inc.DEFAULT_LANGUAGE, 'en', 'vi', 'fr', 'ko', 'cn', 'th']
 
 # 言語一覧
@@ -466,6 +469,9 @@ def randomShortString(string_length=6):
 	for j in range(string_length):
 		random_string += random.choice(s)
 	return random_string
+
+def createNewId(string_length):
+	return dateString() + randomString(string_length=string_length)
 
 def stringToDateTime(datetime_string):
 	return datetime.datetime.strptime(datetime_string, "%Y/%m/%d %H:%M")
@@ -1122,6 +1128,43 @@ def exchangeTimeZoneCode(timezone):
 	#	timezone = sateraito_inc.DEFAULT_TIMEZONE		#
 	return timezone
 
+def isValidAppId(app_id):
+	# app_id must
+	#  not start from '_'
+	#  contain only alphabet, numeric and _ and - character
+	#  not contain '_____'
+	if app_id is None or app_id == '':
+		return True
+	regexp = re.compile('^[0-9A-Za-z_\-]+$')
+	if regexp.search(app_id) is None:
+		# app_id have prohibited character
+		return False
+	if app_id[0:1] == '_':
+		# app_id starts with '_'
+		return False
+	if app_id.find(DELIMITER_NAMESPACE_DOMAIN_APP_ID) != -1:
+		# app_id contains '_____'
+		return False
+	return True
+
+def setNamespace(google_apps_domain, app_id):
+	"""  Args: google_apps_domain
+				app_id
+	Return: True is app_id is correct, false is not
+	"""
+	# app_id check
+	if not isValidAppId(app_id):
+		logging.warn('wrong app_id:' + str(app_id))
+		return False
+	namespace_name = google_apps_domain
+	if app_id is None or app_id == '' or app_id == DEFAULT_APP_ID:
+		# if app_id is default app id, namespace_name == google_apps_domain
+		pass
+	else:
+		namespace_name += DELIMITER_NAMESPACE_DOMAIN_APP_ID + app_id
+	logging.info('setNamespace google_apps_domain=%s, app_id=%s, namespace=%s' % (google_apps_domain, app_id, namespace_name))
+	namespace_manager.set_namespace(namespace_name)
+	return True
 
 # SameSiteをU/Aで判別して自動付与する対応
 # SameSite対応…SameSite=NoneをつけるかどうかをU/Aで判断
@@ -1165,6 +1208,80 @@ def isSameSiteCookieSupportedUA(strAgent):
 	logging.debug('isSameSiteCookieSupportedUA=%s' % (is_supported))
 	return is_supported
 
+# Firebase notification
+from firebase_admin import messaging
+
+def notificationForAdminHasNewDoc(google_apps_domain, viewer_email, workflow_doc):
+	user_entry_dict = GoogleAppsUserEntry.get_dict(google_apps_domain, viewer_email)
+
+	# webpush_action_detail = messaging.WebpushNotificationAction(
+    #     action='action_detail',
+    #     title='Detail',
+    #     icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico"
+    # )
+	webpush_action_allow = messaging.WebpushNotificationAction(
+		action='action_allow',
+		title='Allow',
+		icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/images/check-48.png"
+	)
+	webpush_action_block = messaging.WebpushNotificationAction(
+		action='action_block',
+		title='Block',
+		icon="https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/images/close-48.png"
+	)
+	
+	title_message = 'Check content email send'
+	body_message = user_entry_dict['user_email'] + ' has sent you a request to check the content that the email will send to the customer'
+	icon_message = user_entry_dict['avatar']
+	if icon_message == '':
+		icon_message = "https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico"
+	
+	webpush_notification = messaging.WebpushNotification(
+		title=title_message,
+		body=body_message,
+		icon=icon_message,
+		actions=[webpush_action_allow, webpush_action_block]
+	)
+	webpush = messaging.WebpushConfig(
+		data={
+			'id_workflow_doc': workflow_doc['id']
+		},
+		notification=webpush_notification
+	)
+	
+	list_token_notification = []
+	q = GoogleAppsUserEntry.query()
+	q.filter(GoogleAppsUserEntry.is_admin == True)
+	q.filter(GoogleAppsUserEntry.google_apps_domain == google_apps_domain)
+	for key in q.iter(keys_only=True):
+		user_entry = key.get()
+
+		if user_entry.token_notification:
+			list_token_notification.append(user_entry.token_notification)
+
+	logging.info(list_token_notification)
+	message_multicast = messaging.MulticastMessage(
+		tokens=list_token_notification,
+		webpush=webpush,
+	)
+
+	return messaging.send_multicast(message_multicast)
+
+def notificationThanksForAccept(google_apps_domain, viewer_email, token_notification):
+	user_entry_dict = GoogleAppsUserEntry.get_dict(google_apps_domain, viewer_email)
+
+	notification = messaging.Notification(
+		title='Thanks',
+		body='Hello world',
+		image='https://ext2005-dot-vn-sateraito-apps-fileserver2.appspot.com/favicon.ico'
+	)
+	
+	message_notification = messaging.Message(
+		data={'init_notification': 'true'},
+		token=token_notification,
+		notification=notification
+	)
+	return messaging.send(message_notification)
 
 # Google Service
 

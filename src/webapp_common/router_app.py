@@ -3,7 +3,7 @@ import os, sys
 
 from webapp_common.base_helper import *
 
-from ucf.utils.models import GoogleAppsDomainEntry, GoogleAppsUserEntry
+from ucf.utils.models import GoogleAppsDomainEntry, GoogleAppsUserEntry, WorkflowDoc
 
 from firebase_admin import messaging
 
@@ -14,11 +14,9 @@ model = 'gpt-3.5-turbo'
 
 NUM_PER_PAGE = 15
 
-
-# path_for_default = os.path.join(os.path.dirname(__file__))
-# cred = credentials.Certificate(path_for_default + "/firebase_key.json")
-# default_app = firebase_admin.initialize_app(cred)
-
+############################################################
+# REQUEST FOR WEBAPP
+############################################################
 
 class WebAppConfig(WebappHelper):
   def processOfRequest(self):
@@ -44,11 +42,6 @@ class WebAppConfig(WebappHelper):
         'error_message': 'MSG_SYSTEM_ERROR',
         'error_code': 999
       })
-
-
-############################################################
-# REQUEST FOR USER LOGGED
-############################################################
 
 class ActionNotification(WebappHelper):
   def processOfRequest(self, google_apps_domain):
@@ -84,10 +77,15 @@ class ActionNotification(WebappHelper):
         'error_code': 999
       })
 
+############################################################
+# REQUEST FOR USER LOGGED
+############################################################
 
 class SetTokenNotification(WebappHelper):
   def processOfRequest(self, google_apps_domain):
     try:
+      self.setNamespace(google_apps_domain)
+
       if not self.checkLogin():
         return self.responseError403()
 
@@ -105,6 +103,8 @@ class SetTokenNotification(WebappHelper):
 
       user_entry.token_notification = token_notification
       user_entry.put()
+
+      sateraito_func.notificationThanksForAccept(google_apps_domain, self.viewer_email, token_notification)
 
       ret_obj = {
         'msg': 'ok'
@@ -159,6 +159,98 @@ class AuthGetInfo(WebappHelper):
         'error_code': 999
       })
 
+############################################################
+# REQUEST FOR WORKFLOW DOC
+############################################################
+
+class GetNewWorkflowDocID(WebappHelper):
+  def processOfRequest(self, google_apps_domain):
+    try:
+      if not self.checkLogin():
+        return self.responseError403()
+      
+      self.setNamespace(google_apps_domain)
+
+      ret_obj = {
+        'status': 'ok',
+        'workflow_doc_id': WorkflowDoc.getNewWorkflowDocID(),
+      }
+
+      self.send_success_response(ret_obj)
+
+    except BaseException as e:
+      logging.error(str(e))
+      return self.send_error_response({
+        'error_message': 'MSG_SYSTEM_ERROR',
+        'error_code': 999
+      })
+
+class CreateWorkflowDoc(WebappHelper):
+  def processOfRequest(self, google_apps_domain):
+    try:
+      if not self.checkLogin():
+        return self.responseError403()
+      
+      self.setNamespace(google_apps_domain)
+      user_entry_dict = GoogleAppsUserEntry.get_dict(google_apps_domain, self.viewer_email)
+      
+      request_json = json.JSONDecoder().decode(request.get_data().decode())
+
+      workflow_doc_id = request_json.get('workflow_doc_id')
+      logging.info("workflow_doc_id=" + str(workflow_doc_id))
+      if (workflow_doc_id is None or workflow_doc_id == ''):
+        workflow_doc_id = WorkflowDoc.getNewWorkflowDocID()
+        logging.info("getNewWorkflowDocID workflow_doc_id=" + str(workflow_doc_id))
+
+      user_email = request_json.get('user_email')
+      logging.info("user_email=" + str(user_email))
+
+      id_email_request_check = request_json.get('id_email_request_check')
+      logging.info("id_email_request_check=" + str(id_email_request_check))
+
+      is_draft_email_request_check = sateraito_func.strToBool(request_json.get('is_draft_email_request_check'))
+      logging.info("is_draft_email_request_check=" + str(is_draft_email_request_check))
+
+      status_request_check = request_json.get('status_request_check')
+      logging.info("status_request_check=" + str(status_request_check))
+
+      seen_request_check_flag = sateraito_func.strToBool(request_json.get('seen_request_check_flag'))
+      logging.info("seen_request_check_flag=" + str(seen_request_check_flag))
+
+      new_row = WorkflowDoc(id=workflow_doc_id)
+      new_row.workflow_doc_id = workflow_doc_id
+      new_row.user_email = user_email
+      new_row.id_email_request_check = id_email_request_check
+      new_row.is_draft_email_request_check = is_draft_email_request_check
+      new_row.status_request_check = status_request_check
+      new_row.seen_request_check_flag = seen_request_check_flag
+
+      new_row.author_email = self.viewer_email
+      new_row.author_name = user_entry_dict.get('given_name', '')
+
+      new_row.put()
+
+      row_dict = new_row.to_dict()
+      row_dict['id'] = new_row.key.id()
+
+      sateraito_func.notificationForAdminHasNewDoc(google_apps_domain, self.viewer_email, row_dict)
+
+      ret_obj = {
+        'status': 'ok',
+      }
+
+      self.send_success_response(ret_obj)
+
+    except BaseException as e:
+      logging.error(str(e))
+      return self.send_error_response({
+        'error_message': 'MSG_SYSTEM_ERROR',
+        'error_code': 999
+      })
+
+############################################################
+# REQUEST FOR UNIT TEST
+############################################################
 
 class RequestTodoSomething(WebappHelper):
   def processOfRequest(self):
@@ -224,6 +316,13 @@ def add_url_rules(app):
   # For /webapp/<request_action>
   app.add_url_rule('/api/webapp/config',
                    view_func=WebAppConfig.as_view(__name__ + '.WebAppConfig'))
+
+  # For /workflow-doc/<request_action>
+  app.add_url_rule('/<google_apps_domain>/api/workflow-doc/get-new-id',
+                   view_func=GetNewWorkflowDocID.as_view(__name__ + '.GetNewWorkflowDocID'))
+
+  app.add_url_rule('/<google_apps_domain>/api/workflow-doc/create-new-doc',
+                   view_func=CreateWorkflowDoc.as_view(__name__ + '.CreateWorkflowDoc'))
 
   # For /auth/<request_action>
   app.add_url_rule('/<google_apps_domain>/api/auth/set-token-notification',

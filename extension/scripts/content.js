@@ -217,12 +217,29 @@ document.addEventListener("RW759_connectExtension", function (e) {
     handlerBBarBtnClick: function (event) {
       let btnEl = event.target;
 
-      let containerBox = $(btnEl).parents('.nH.Hd')
+      let containerBox = $(btnEl).parents('.nH.Hd, .ip.adB')
       let idDraftRaw = $(containerBox).find('form.bAs input[name="draft"]').val();
-      let idDraft = idDraftRaw.split(':')[1];
+      let idEmailDraft = idDraftRaw.split(':')[1];
 
-      FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
+      // FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idDraft);
       // MyUtils.setOpenSidePanel();
+
+      let user_email = getCurrentUser();
+
+      // create new workflow doc to check content email will send for the customers
+      WorkflowDocManager.createRequestCheckContentEmail(user_email, {
+        domain_email: MyUtils.getDomainEmail(user_email),
+        user_email: user_email,
+        id_email_request_check: idEmailDraft,
+        is_draft_email_request_check: true,
+        status_request_check: 'pending',
+        seen_request_check_flag: false,
+      }).then(result => {
+        // push id email draft to firebase - (trigger event on change value in database)
+        FirebaseManager.addRequestCheckMailToAdmin(getCurrentUser(), idEmailDraft);
+      }).catch(error => {
+        console.log(error)
+      });
     }
   };
 

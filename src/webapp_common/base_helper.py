@@ -271,7 +271,7 @@ class WebappHelper(FrontHelper):
 		self.removeCookie(OPENID_COOKIE_NAME)
 
 	@classmethod
-	def setNamespace(cls, tenant, app_id):
+	def setNamespace(cls, tenant, app_id=''):
 		"""
 		Args: tenant
 					app_id

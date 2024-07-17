@@ -272,6 +272,50 @@ const SateraitoRequest = {
   },
 };
 
+const WorkflowDocManager = {
+  // Request API function
+
+  /**
+   * getNewIDRequest
+   *
+   * @return {Promise<Object|string>}
+   */
+  getNewIDRequest: () => {
+    return new Promise((resolve, reject) => {
+      const url = `${SERVER_URL}/api/workflow-doc/get-new-id`;
+      SateraitoRequest._get(url, (success, data) => {
+        if (success) {
+          resolve(data);
+        } else {
+          reject('ERROR:: Workflow doc get new id');
+        }
+      });
+    });
+  },
+
+  /**
+   * createRequestCheckContentEmail
+   *
+   * @return {Promise<Object|string>}
+   */
+  createRequestCheckContentEmail: (user_email, params) => {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          method: 'api_workflow_doc_create_request_check_content_email',
+          payload: params
+        }, (result) => {
+          const {success, msg, data} = result;
+          if (success) {
+            resolve(data);
+          } else {
+            reject(msg);
+          }
+        });
+    });
+  },
+};
+
 /**
  * FirebaseManager
  *
@@ -382,14 +426,13 @@ const FirebaseManager = {
     let email_domain = MyUtils.getDomainEmail(userEmail);
     let domain_path = MyUtils.toPathDomain(email_domain);
 
-    let reference = self._database.ref(`${domain_path}/${emailId}`);
-    reference.set({
-      'id_email': emailId,
-      'user_email': userEmail,
-      'seen_flag': false,
-      'status': 'pending',
-      'created_date': new Date(),
-    });
+    let reference = self._database.ref(`${domain_path}/email_request_check_content`);
+
+    let newRow = {};
+    newRow[emailId] = false;
+
+    let newChildRef = reference.push();
+    newChildRef.set(newRow);
   },
 
   /**

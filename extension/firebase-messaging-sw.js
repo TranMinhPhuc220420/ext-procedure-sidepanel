@@ -39,7 +39,18 @@ const loadConfig = () => {
   })
 };
 const init_message_sw = async () => {
-  const conf = await loadConfig();
+  // const conf = await loadConfig();
+  const conf = {
+    "apiKey": "AIzaSyCFuEjuBomTlp_09Kre35FSzZgzUAeTFlI",
+    "authDomain": "pdsasf-50ce6.firebaseapp.com",
+    "databaseURL": "https://pdsasf-50ce6-default-rtdb.firebaseio.com",
+    "projectId": "pdsasf-50ce6",
+    "storageBucket": "pdsasf-50ce6.appspot.com",
+    "messagingSenderId": "639641619695",
+    "appId": "1:639641619695:web:fffd775cce7454547a1f1a",
+    "measurementId": "G-WTQXNPQECY",
+    "vapidKey": "BLyRTnCWp_0fUxM_f6iz6PTZTVQOu4yW0o6wz9ryAYvaPQVhLelzFY_7dJak-9QG_Qq0M7TnNyzKu35UbhhipHc",
+  };
 
   const _app = await firebase.initializeApp(conf);
   const _messaging = await firebase.messaging();

@@ -117,12 +117,19 @@
         if (firebase.database) {
           self._database = firebase.database();
 
-          self.setTriggerEventRequestAllowMail()
+          if (USER_ADDON_LOGIN['is_admin']) {
+            self.setTriggerEventRequestAllowMail()
+          }
         }
       });
     },
 
     loadConfig: (callback) => {
+      if (self._config) {
+        callback(true, self._config)
+        return;
+      }
+
       _postRequest(`${SERVER_URL}/api/webapp/config`, {'config_get': 'firebase_config'}, (success, webappConfig) => {
         callback(success ? webappConfig : undefined);
       });
@@ -132,7 +139,7 @@
       const self = _Firebase_SW;
 
       const domain_path = toPathDomain(DOMAIN_USER_ADDON);
-      let reference = self._database.ref(`${domain_path}`);
+      let reference = self._database.ref(`${domain_path}/email_request_check_content`);
 
       reference.on('value', (snapshot) => {
         const data = snapshot.val();
@@ -140,8 +147,10 @@
 
         let totalNotSeen = 0;
         for (const key in data) {
-          if (!data[key].seen_flag) {
-            totalNotSeen++;
+          for (const key_2 in data[key]) {
+            if (data[key][key_2] == false) {
+              totalNotSeen++;
+            }
           }
         }
 
@@ -156,6 +165,8 @@
   };
 
   const _Authorization_SW = {
+    info: null,
+
     /**
      * getUserInfo
      *
@@ -164,7 +175,15 @@
     getUserInfo: (callback) => {
       const self = _Authorization_SW;
 
+      if (self.info) {
+        callback(self.info);
+        return;
+      }
+
       _getRequest(`${SERVER_URL}/api/auth/get-info`, (success, userInfo) => {
+
+        self.info = userInfo;
+
         if (success) {
           callback(userInfo);
         } else {
@@ -192,6 +211,42 @@
         callback(success ? result : undefined);
       });
     }
+  };
+
+  const _WorkflowDoc_SW = {
+    // Request API function
+
+    /**
+     * getNewIDRequest
+     *
+     */
+    getNewIDRequest: (callback) => {
+      const url = `${SERVER_URL}/api/workflow-doc/get-new-id`;
+      _getRequest(url, (success, data) => {
+        if (success) {
+          callback(data);
+        } else {
+          callback();
+        }
+      });
+    },
+
+    /**
+     * createRequestCheckContentEmail
+     *
+     */
+    createRequestCheckContentEmail: (params, callback) => {
+      const {domain_email} = params;
+
+      const url = `${SERVER_URL}/${domain_email}/api/workflow-doc/create-new-doc`;
+      _postRequest(url, params, (success, data) => {
+        if (success) {
+          callback({success: true, msg: '', data: data});
+        } else {
+          callback({success: true, msg: 'create new doc error', data: data});
+        }
+      });
+    },
   };
 
   const _Storage_SW = {
@@ -241,6 +296,12 @@
       case 'api_firebase_load_config':
         _Firebase_SW.loadConfig(config => {
           sendResponse(config);
+        });
+        break;
+
+      case 'api_workflow_doc_create_request_check_content_email':
+        _WorkflowDoc_SW.createRequestCheckContentEmail(payload, result => {
+          sendResponse(result);
         });
         break;
     }

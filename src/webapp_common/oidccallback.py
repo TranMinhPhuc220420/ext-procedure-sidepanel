@@ -78,7 +78,7 @@ def getCredentials(state, code, with_admin_consent=False, num_retry=0):
 
 class OIDCCallback(WebappHelper):
 
-	def get(self):
+	def processOfRequest(self):
 		logging.debug('**** requests *********************')
 		logging.debug(self.request)
 
